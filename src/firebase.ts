@@ -11,16 +11,20 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
+const databaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID || '(default)';
+
 // Check for missing required config
 const missingKeys = Object.entries(firebaseConfig)
-  .filter(([_, value]) => !value)
+  .filter(([key, value]) => !value && key !== 'databaseId')
   .map(([key]) => key);
 
 if (missingKeys.length > 0 && import.meta.env.PROD) {
   console.warn('Firebase configuration is incomplete. Missing keys:', missingKeys.join(', '));
   console.info('Make sure all VITE_FIREBASE_* environment variables are set during build time.');
+} else if (import.meta.env.PROD) {
+  console.log('Firebase initialized with Project ID:', firebaseConfig.projectId, 'Database ID:', databaseId);
 }
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+export const db = getFirestore(app, databaseId);
 export const auth = getAuth(app);

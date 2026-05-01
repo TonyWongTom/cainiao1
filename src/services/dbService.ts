@@ -54,11 +54,12 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 // CRITICAL: Connection test
 async function testConnection() {
   const timeout = new Promise((_, reject) => 
-    setTimeout(() => reject(new Error('Firebase connection timeout')), 5000)
+    setTimeout(() => reject(new Error('Firebase connection timeout')), 15000)
   );
 
   try {
     const testDoc = doc(db, 'test', 'connection');
+    console.log("Checking Firestore connection to project:", import.meta.env.VITE_FIREBASE_PROJECT_ID);
     await Promise.race([getDocFromServer(testDoc), timeout]);
     console.log("Firebase connection successful.");
   } catch (error) {
