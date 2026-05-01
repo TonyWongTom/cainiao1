@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -26,5 +26,13 @@ if (missingKeys.length > 0 && import.meta.env.PROD) {
 }
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, databaseId);
+
+// Initialize Firestore with settings for better reliability (long polling)
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  })
+}, databaseId);
+
 export const auth = getAuth(app);

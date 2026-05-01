@@ -110,10 +110,18 @@ const App: React.FC = () => {
         <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-8">
           <span className="text-5xl mb-6">⚠️</span>
           <h2 className="text-lg font-black text-gray-800 mb-2">连接异常</h2>
-          <p className="text-sm text-gray-500 mb-6">{error}</p>
+          <p className="text-sm text-gray-500 mb-4">{error}</p>
+          <div className="bg-amber-50 p-4 rounded-xl text-xs text-amber-800 mb-6 text-left max-w-xs">
+            <p className="font-bold mb-1">可能原因：</p>
+            <ul className="list-disc ml-4 space-y-1">
+              <li>网络不稳定，请切换网络重试</li>
+              <li>如果您使用了非默认数据库，请确认 <b>VITE_FIREBASE_DATABASE_ID</b> 已正确设置</li>
+              <li>确认 Firebase 控制台已开启 Firestore 读写权限</li>
+            </ul>
+          </div>
           <button 
             onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-emerald-600 text-white rounded-full text-sm font-bold shadow-lg"
+            className="px-6 py-2 bg-emerald-600 text-white rounded-full text-sm font-bold shadow-lg active:scale-95 transition-transform"
           >
             重试
           </button>
