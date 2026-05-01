@@ -1,0 +1,43 @@
+{
+  "entities": {
+    "Player": {
+      "title": "Player",
+      "description": "Information about a badminton player",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["founder", "regular"] },
+        "initialFund": { "type": "number" },
+        "joinedDate": { "type": "string", "format": "date" }
+      },
+      "required": ["id", "name", "type"]
+    },
+    "Period": {
+      "title": "Settlement Period",
+      "description": "A financial settlement period for the club",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "isClosed": { "type": "boolean" },
+        "totalIncome": { "type": "number" },
+        "totalExpense": { "type": "number" },
+        "sessions": { "type": "array" }
+      },
+      "required": ["id", "name", "startDate", "endDate", "isClosed"]
+    }
+  },
+  "firestore": {
+    "players": {
+      "schema": { "$ref": "#/entities/Player" },
+      "description": "Collection of all players in the club"
+    },
+    "periods": {
+      "schema": { "$ref": "#/entities/Period" },
+      "description": "Collection of all club history periods"
+    }
+  }
+}
