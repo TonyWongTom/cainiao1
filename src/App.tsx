@@ -14,9 +14,18 @@ const App: React.FC = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [periods, setPeriods] = useState<Period[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Load initial data and subscribe to real-time updates
   useEffect(() => {
+    // Add a safety timeout to not show loading forever
+    const loadingTimeout = setTimeout(() => {
+      if (isLoading) {
+        setError("连接数据库超时，请检查配置或网络。");
+        setIsLoading(false);
+      }
+    }, 8000);
+
     const unsubPlayers = dbService.subscribeToPlayers((syncedPlayers) => {
       if (syncedPlayers.length === 0) {
         // Initialize with default funders if totally empty (first run)
@@ -29,13 +38,15 @@ const App: React.FC = () => {
     const unsubPeriods = dbService.subscribeToPeriods((syncedPeriods) => {
       setPeriods(syncedPeriods);
       setIsLoading(false);
+      clearTimeout(loadingTimeout);
     });
 
     return () => {
       unsubPlayers();
       unsubPeriods();
+      clearTimeout(loadingTimeout);
     };
-  }, []);
+  }, [isLoading]);
 
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(null);
 
@@ -49,10 +60,6 @@ const App: React.FC = () => {
   // Wrapper functions to keep existing component logic working while piping to Firestore
   const handleSetPlayers: React.Dispatch<React.SetStateAction<Player[]>> = (action) => {
     const nextPlayers = typeof action === 'function' ? action(players) : action;
-    
-    // Identify changes and sync to Firestore
-    // This is a naive implementation; in a full app we'd call savePlayer/deletePlayer directly from components
-    // But since the current components are built around setPlayers, we'll reconcile here for now
     
     // Check for deletions
     players.forEach(p => {
@@ -90,9 +97,26 @@ const App: React.FC = () => {
   const renderView = () => {
     if (isLoading) {
       return (
-        <div className="flex flex-col items-center justify-center h-64 text-emerald-500 animate-pulse">
-           <span className="text-4xl mb-4 font-black">🏸</span>
+        <div className="flex flex-col items-center justify-center min-h-[50vh] text-emerald-500 animate-pulse text-center p-8">
+           <span className="text-5xl mb-6">🏸</span>
            <span className="text-sm font-black uppercase tracking-widest">数据联接中...</span>
+           <p className="mt-4 text-xs text-gray-400 font-medium">如果是首次运行，请耐心等待 10-20 秒</p>
+        </div>
+      );
+    }
+
+    if (error && players.length === 0 && periods.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-8">
+          <span className="text-5xl mb-6">⚠️</span>
+          <h2 className="text-lg font-black text-gray-800 mb-2">连接异常</h2>
+          <p className="text-sm text-gray-500 mb-6">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-emerald-600 text-white rounded-full text-sm font-bold shadow-lg"
+          >
+            重试
+          </button>
         </div>
       );
     }

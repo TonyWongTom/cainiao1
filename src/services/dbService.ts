@@ -53,11 +53,29 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 
 // CRITICAL: Connection test
 async function testConnection() {
+  const timeout = new Promise((_, reject) => 
+    setTimeout(() => reject(new Error('Firebase connection timeout')), 5000)
+  );
+
   try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
+    const testDoc = doc(db, 'test', 'connection');
+    await Promise.race([getDocFromServer(testDoc), timeout]);
+    console.log("Firebase connection successful.");
   } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration.");
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Firebase connection check failed:", message);
+    
+    if (message.includes('offline') || message.includes('timeout') || message.includes('permission')) {
+      // We don't want to crash the app, but we want to alert the developer
+      const configError = {
+        type: 'FIREBASE_CONNECTION_ERROR',
+        details: message,
+        config: {
+          projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ? 'Set' : 'Missing',
+          apiKey: import.meta.env.VITE_FIREBASE_API_KEY ? 'Set' : 'Missing',
+        }
+      };
+      console.warn("Possible configuration issue detected:", JSON.stringify(configError, null, 2));
     }
   }
 }
