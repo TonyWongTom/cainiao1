@@ -3,8 +3,8 @@ FROM node:20-alpine AS build
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY package*.json ./
-# Use npm ci for more reliable builds if lockfile is present
-RUN npm install
+# Use --legacy-peer-deps to bypass react-datepicker dependency conflicts
+RUN npm install --legacy-peer-deps
 COPY . .
 
 # Build-time environment variables
