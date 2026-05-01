@@ -1,0 +1,211 @@
+
+import React from 'react';
+import { Period, Player, PlayerType } from '../types';
+import { formatMonthDay } from '../utils/dateUtils';
+
+interface FinanceReportProps {
+  periods: Period[];
+  players: Player[];
+  initialPeriodId: string | null;
+  onPeriodChange: (id: string) => void;
+}
+
+const FinanceReport: React.FC<FinanceReportProps> = ({ periods, players, initialPeriodId, onPeriodChange }) => {
+  const selectedPeriod = initialPeriodId 
+    ? periods.find(p => p.id === initialPeriodId) 
+    : (periods.length > 0 ? periods[0] : null);
+
+  const calculatePeriodStats = (period: Period) => {
+    const grossIncome = period.sessions.reduce((acc, s) => acc + s.attendees.reduce((sum, a) => sum + a.fee, 0), 0);
+    const sessionCosts = period.sessions.reduce((acc, s) => acc + (s.sessionCost || 0), 0);
+    
+    // The user wants session-specific income to be net (fees - sessionCost)
+    const netTotalIncome = grossIncome - sessionCosts;
+    
+    // Total expenses = Just the Base court cost, since sessionCosts are already deducted from income
+    const baseCourtCost = period.courtCost;
+    const totalExpenses = baseCourtCost;
+    
+    const surplus = netTotalIncome - totalExpenses;
+    const funderCount = period.funderIds?.length || 0;
+    
+    const investmentPerFunder = funderCount > 0 ? totalExpenses / funderCount : 0;
+    const refundPerFunder = funderCount > 0 ? netTotalIncome / funderCount : 0;
+
+    // Aggregate stats per player for this period
+    const playerBreakdown = period.sessions.reduce((acc, session) => {
+      session.attendees.forEach(att => {
+        if (!acc[att.playerId]) {
+          acc[att.playerId] = { count: 0, totalPaid: 0 };
+        }
+        acc[att.playerId].count += 1;
+        acc[att.playerId].totalPaid += att.fee;
+      });
+      return acc;
+    }, {} as Record<string, { count: number; totalPaid: number }>);
+    
+    return { 
+      totalIncome: netTotalIncome, 
+      grossIncome,
+      totalExpenses, 
+      surplus, 
+      refundPerFunder, 
+      investmentPerFunder, 
+      funderCount,
+      sessionCosts,
+      playerBreakdown
+    };
+  };
+
+  return (
+    <div className="p-4 space-y-6 pb-20">
+      <div className="flex justify-between items-center px-1">
+        <h2 className="text-xl font-black text-gray-800">财务统计报表</h2>
+      </div>
+
+      {periods.length > 0 && (
+        <div>
+          <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
+            选择结算周期
+          </label>
+          <div className="relative">
+            <select
+              value={selectedPeriod?.id || ''}
+              onChange={(e) => onPeriodChange(e.target.value)}
+              className="w-full bg-white border border-gray-100 rounded-2xl p-4 text-xs font-black text-emerald-700 outline-none appearance-none shadow-sm cursor-pointer"
+            >
+              {periods.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({formatMonthDay(p.startDate)})
+                </option>
+              ))}
+            </select>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-emerald-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {periods.length === 0 ? (
+        <div className="text-center py-20 text-gray-400">
+          <p className="text-5xl mb-4 opacity-10">📊</p>
+          <p className="text-sm font-bold">暂无历史结算数据</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100">
+            <h3 className="text-xs font-black text-amber-800 mb-2 flex items-center gap-1 uppercase">💡 核心财务逻辑</h3>
+            <p className="text-[10px] text-amber-600 leading-relaxed font-medium">
+              1. <b>总投入</b> = 基础场地费 (不含单场额外支出，因其已从收入中扣除)。<br/>
+              2. <b>单场记录收入</b> = 成员实付金额 - 当次额外支出。<br/>
+              3. <b>周期总收入</b> = 周期内所有单场记录收入之和。<br/>
+              4. <b>投入(预付)</b> = 总投入 / 集资人数。<br/>
+              5. <b>返款(所得)</b> = 周期总收入 / 集资人数。<br/>
+            </p>
+          </div>
+
+          {selectedPeriod && (() => {
+            const stats = calculatePeriodStats(selectedPeriod);
+            return (
+              <div key={selectedPeriod.id} className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="bg-gray-50 px-5 py-4 border-b border-gray-100 flex justify-between items-center">
+                  <span className="font-black text-gray-800 text-base">
+                    {selectedPeriod.name} <span className="text-gray-400 font-bold ml-1">({formatMonthDay(selectedPeriod.startDate)})</span>
+                  </span>
+                  <span className="text-[10px] bg-white border border-gray-200 text-gray-400 px-3 py-1 rounded-full font-bold">
+                    集资: {stats.funderCount}人
+                  </span>
+                </div>
+                
+                <div className="p-5">
+                  <div className="grid grid-cols-2 gap-6 mb-6">
+                    <div>
+                      <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">周期基础总投 (预付)</p>
+                      <p className="text-xl font-black text-red-500">¥{stats.totalExpenses.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">周期累计净收 (合计)</p>
+                      <p className="text-xl font-black text-emerald-600">¥{stats.totalIncome.toFixed(2)}</p>
+                      {stats.sessionCosts > 0 && (
+                        <p className="text-[8px] text-gray-400 mt-0.5 italic">已扣除额外费: ¥{stats.sessionCosts.toFixed(2)}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-900 rounded-2xl p-5 text-white shadow-lg relative mb-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">集资人个人账单 (每人)</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[9px] text-red-400 font-bold mb-1 italic">本期预付投入</p>
+                        <p className="text-lg font-black opacity-90">¥{stats.investmentPerFunder.toFixed(2)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[9px] text-emerald-400 font-bold mb-1 italic">本期所得返款</p>
+                        <p className="text-lg font-black">¥{stats.refundPerFunder.toFixed(2)}</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
+                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">最终实际打球成本：</span>
+                      <span className="text-sm font-black text-amber-400">¥{(stats.investmentPerFunder - stats.refundPerFunder).toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  {/* Participant Detailed Breakdown */}
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1 flex justify-between">
+                      <span>🏸 参与成员明细</span>
+                      <span>{Object.keys(stats.playerBreakdown).length}人出勤</span>
+                    </p>
+                    <div className="bg-gray-50 rounded-2xl overflow-hidden border border-gray-100">
+                      <div className="grid grid-cols-3 px-4 py-2 border-b border-gray-100 text-[8px] font-black text-gray-400 uppercase tracking-wider">
+                        <span>姓名</span>
+                        <span className="text-center">出勤次数</span>
+                        <span className="text-right">总实付</span>
+                      </div>
+                      <div className="divide-y divide-gray-100">
+                        {Object.entries(stats.playerBreakdown).map(([pid, data]) => {
+                          const playerName = players.find(p => p.id === pid)?.name || '未知';
+                          const isFunder = selectedPeriod.funderIds.includes(pid);
+                          return (
+                            <div key={pid} className="grid grid-cols-3 px-4 py-3 items-center">
+                              <div className="flex items-center gap-1.5 overflow-hidden">
+                                <span className="text-xs font-bold text-gray-700 truncate">{playerName}</span>
+                                {isFunder && <span className="text-[8px] bg-amber-100 text-amber-600 px-1 rounded font-black shrink-0">👑</span>}
+                              </div>
+                              <div className="text-center">
+                                <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{data.count}次</span>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-xs font-black text-gray-800">¥{data.totalPaid.toFixed(2)}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">当期集资背景</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedPeriod.funderIds.map(fid => (
+                        <span key={fid} className="text-[10px] bg-gray-50 text-gray-600 border border-gray-100 px-2 py-1 rounded-md font-bold">
+                          {players.find(p => p.id === fid)?.name || '未知'}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default FinanceReport;

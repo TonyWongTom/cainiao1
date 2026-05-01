@@ -1,0 +1,4 @@
+google-cloud-firestore
+flask-cors
+gunicorn
+flask
