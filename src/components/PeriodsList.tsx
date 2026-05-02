@@ -20,6 +20,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
   const [editingPeriodId, setEditingPeriodId] = useState<string | null>(null);
   const [expandedPeriodId, setExpandedPeriodId] = useState<string | null>(null);
   const [activeSessionPeriod, setActiveSessionPeriod] = useState<string | null>(null);
+  const [sessionSearchQuery, setSessionSearchQuery] = useState('');
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [periodToDeleteId, setPeriodToDeleteId] = useState<string | null>(null);
   const [sessionConfirmDeleteId, setSessionConfirmDeleteId] = useState<string | null>(null);
@@ -460,15 +461,26 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
             </div>
             
             <div>
-              <p className="text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest">第一步：选择出席成员 ({selectedAttendees.length}):</p>
-              <div className="flex flex-wrap gap-1.5 p-3 bg-gray-50 rounded-2xl border border-gray-100">
-                {Array.isArray(players) && players.map(p => {
+              <div className="flex justify-between items-center mb-2">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">第一步：选择出席成员 ({selectedAttendees.length}):</p>
+                <input 
+                  type="text" 
+                  value={sessionSearchQuery} 
+                  onChange={(e) => setSessionSearchQuery(e.target.value)} 
+                  placeholder="搜索成员..." 
+                  className="w-24 text-[10px] bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 outline-none focus:ring-1 focus:ring-emerald-400"
+                />
+              </div>
+              <div className="flex flex-wrap gap-1.5 p-3 bg-gray-50 rounded-2xl border border-gray-100 max-h-48 overflow-y-auto">
+                {Array.isArray(players) && players
+                  .filter(p => !sessionSearchQuery || p.name.toLowerCase().includes(sessionSearchQuery.toLowerCase()))
+                  .map(p => {
                   const isSelected = selectedAttendees.find(a => a.playerId === p.id);
                   const displayFee = calculatePotentialFee(p, periodId);
                   return (
                     <button key={p.id} onClick={() => toggleAttendee(p, periodId)} className={`text-[10px] px-3 py-2 rounded-xl font-black transition-all border flex items-center gap-1.5 ${isSelected ? 'bg-emerald-600 border-emerald-700 text-white shadow-md' : 'bg-white border-gray-100 text-gray-400'}`}>
                       <span>{p.name}</span>
-                      <span className={`text-[8px] opacity-70 ${isSelected ? 'text-white' : 'text-gray-400'}`}>¥{displayFee}</span>
+                      <span className={`text-[8px] opacity-70 ${isSelected ? 'text-white' : 'text-gray-400'}`}>{displayFee === 0 ? '0' : `¥${displayFee}`}</span>
                     </button>
                   );
                 })}
@@ -626,7 +638,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
                                 <span className="text-xs font-black text-gray-800">{formatDateChinese(session.date)}</span>
                                 <div className="flex items-center gap-2 mt-1">
                                   <span className="text-[9px] text-gray-500 font-bold">实收: ¥{(session.attendees || []).reduce((sum, a) => sum + (a.fee || 0), 0)}</span>
-                                  {session.sessionCost ? <span className="text-[9px] text-red-500 font-bold">支出: -¥{session.sessionCost}</span> : null}
+                                  <span className="text-[9px] text-red-500 font-bold">支出: {session.sessionCost ? `-¥${session.sessionCost}` : '0'}</span>
                                   <span className="text-[9px] text-emerald-600 font-black">当次入: ¥{((session.attendees || []).reduce((sum, a) => sum + (a.fee || 0), 0) - (session.sessionCost || 0)).toFixed(2)}</span>
                                 </div>
                              </div>

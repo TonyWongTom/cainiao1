@@ -251,7 +251,7 @@ const PlayersList: React.FC<PlayersListProps> = ({ players, setPlayers, periods 
       )}
 
       <div className="space-y-3">
-        {Array.isArray(players) && players.map(player => {
+        {Array.isArray(players) && [...players].sort((a,b) => (a.isFunder === b.isFunder ? 0 : a.isFunder ? -1 : 1)).map(player => {
           if (editingId === player.id) {
             return (
               <div key={player.id} className="animate-in slide-in-from-top-1 duration-200">
