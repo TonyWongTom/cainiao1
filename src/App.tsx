@@ -49,9 +49,8 @@ const App: React.FC = () => {
     return () => {
       unsubPlayers();
       unsubPeriods();
-      clearTimeout(loadingTimeout);
     };
-  }, [isLoading]);
+  }, []);
 
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(null);
 

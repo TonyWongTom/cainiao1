@@ -47,40 +47,9 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
     operationType,
     path
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  console.error('Firestore Error Detailed: ', JSON.stringify(errInfo, null, 2));
+  throw error;
 }
-
-// CRITICAL: Connection test
-async function testConnection() {
-  const timeout = new Promise((_, reject) => 
-    setTimeout(() => reject(new Error('Firebase connection timeout')), 15000)
-  );
-
-  try {
-    const testDoc = doc(db, 'test', 'connection');
-    console.log("Checking Firestore connection to project:", import.meta.env.VITE_FIREBASE_PROJECT_ID);
-    await Promise.race([getDocFromServer(testDoc), timeout]);
-    console.log("Firebase connection successful.");
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("Firebase connection check failed:", message);
-    
-    if (message.includes('offline') || message.includes('timeout') || message.includes('permission')) {
-      // We don't want to crash the app, but we want to alert the developer
-      const configError = {
-        type: 'FIREBASE_CONNECTION_ERROR',
-        details: message,
-        config: {
-          projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ? 'Set' : 'Missing',
-          apiKey: import.meta.env.VITE_FIREBASE_API_KEY ? 'Set' : 'Missing',
-        }
-      };
-      console.warn("Possible configuration issue detected:", JSON.stringify(configError, null, 2));
-    }
-  }
-}
-testConnection();
 
 export const dbService = {
   // Players
@@ -102,6 +71,7 @@ export const dbService = {
       await setDoc(doc(db, 'players', player.id), player);
       return true;
     } catch (error) {
+      console.error("Firestore SAVE_PLAYER Error:", error);
       handleFirestoreError(error, OperationType.WRITE, path);
       return false;
     }
@@ -113,6 +83,7 @@ export const dbService = {
       await deleteDoc(doc(db, 'players', playerId));
       return true;
     } catch (error) {
+      console.error("Firestore DELETE_PLAYER Error:", error);
       handleFirestoreError(error, OperationType.DELETE, path);
       return false;
     }
@@ -137,6 +108,7 @@ export const dbService = {
       await setDoc(doc(db, 'periods', period.id), period);
       return true;
     } catch (error) {
+      console.error("Firestore SAVE_PERIOD Error:", error);
       handleFirestoreError(error, OperationType.WRITE, path);
       return false;
     }
@@ -148,6 +120,7 @@ export const dbService = {
       await deleteDoc(doc(db, 'periods', periodId));
       return true;
     } catch (error) {
+      console.error("Firestore DELETE_PERIOD Error:", error);
       handleFirestoreError(error, OperationType.DELETE, path);
       return false;
     }

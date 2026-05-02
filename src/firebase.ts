@@ -18,18 +18,12 @@ const missingKeys = Object.entries(firebaseConfig)
   .filter(([key, value]) => !value && key !== 'databaseId')
   .map(([key]) => key);
 
-if (missingKeys.length > 0 && import.meta.env.PROD) {
-  console.warn('Firebase configuration is incomplete. Missing keys:', missingKeys.join(', '));
-  console.info('Make sure all VITE_FIREBASE_* environment variables are set during build time.');
-} else if (import.meta.env.PROD) {
-  console.log('Firebase initialized with Project ID:', firebaseConfig.projectId, 'Database ID:', databaseId);
-}
-
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore with settings for better reliability (long polling)
+// Initialize Firestore with forced long polling settings for maximum reliability
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
+  experimentalAutoDetectLongPolling: false,
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager()
   })
