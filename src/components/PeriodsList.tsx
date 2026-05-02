@@ -556,7 +556,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
                      className="px-3 py-2 flex items-center gap-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 active:scale-95 transition-all rounded-xl border border-emerald-100 shadow-sm"
                    >
                      <Icons.Download />
-                     <span className="text-[9px] font-black uppercase tracking-widest">导出流水</span>
+                     <span className="text-[9px] font-black uppercase tracking-widest">导出</span>
                    </button>
                    <div className="text-right">
                       <p className="text-[9px] text-gray-400 font-black">场次</p>
