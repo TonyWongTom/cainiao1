@@ -137,7 +137,10 @@ export const dbService = {
       const players = snapshot.docs.map(doc => doc.data() as Player);
       console.log('Firestore 返回的原始数据 (subscribeToPlayers):', players);
       callback(players);
-    }, (error) => handleFirestoreError(error, OperationType.GET, 'players'));
+    }, (error) => {
+      alert('云端同步失败: ' + error.message);
+      handleFirestoreError(error, OperationType.GET, 'players');
+    });
   },
 
   subscribeToPeriods(callback: (periods: Period[]) => void) {
