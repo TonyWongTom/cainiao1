@@ -28,6 +28,7 @@ const App: React.FC = () => {
 
   // Load initial data and subscribe to real-time updates
   useEffect(() => {
+    console.log('Final Sync Project ID:', import.meta.env.VITE_FIREBASE_PROJECT_ID);
     const unsubPlayers = dbService.subscribeToPlayers((syncedPlayers) => {
       setPlayers(syncedPlayers);
       if (syncedPlayers.length === 0) {
