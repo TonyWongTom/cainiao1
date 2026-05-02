@@ -18,7 +18,7 @@ const ACCESS_PASSWORD = 'cainiao';
 async function startServer() {
   const app = express();
   
-  // --- 1. Middleware (Absolute TOP Priority) ---
+  // --- 1. MIDDLEWARE (ABSOLUTE TOP) ---
   app.use(cors());
   app.use(express.json());
 
@@ -28,7 +28,7 @@ async function startServer() {
     next();
   });
 
-  // --- 2. Environment & Firebase Setup ---
+  // --- 2. FIREBASE & FIRESTORE INITIALIZATION ---
   let serviceAccount: any = undefined;
   try {
     if (process.env.SERVICE_ACCOUNT_KEY) {
@@ -63,12 +63,14 @@ async function startServer() {
 
   let db: admin.firestore.Firestore;
   try {
-    db = getFirestore(admin.app(), databaseId);
+    const firestoreApp = admin.app();
+    db = getFirestore(firestoreApp, databaseId);
   } catch (err) {
+    console.error('Firestore init failed, falling back to default:', err);
     db = getFirestore();
   }
 
-  // --- 3. API ROUTER (High Priority) ---
+  // --- 3. API ROUTER (PHYSICAL ISOLATION) ---
   const apiRouter = express.Router();
 
   // Auth Helper
@@ -86,16 +88,18 @@ async function startServer() {
         .filter(p => p.id && p.name && !p.isPlaceholder);
       res.json(players);
     } catch (err) {
+      console.error('GET /players failed:', err);
       res.json([]);
     }
   });
 
   apiRouter.post('/players', authMiddleware, async (req, res) => {
     try {
-      if (!req.body || !req.body.id) throw new Error('Missing ID');
+      if (!req.body || !req.body.id) return res.status(400).json({ error: 'Missing Player ID' });
       await db.collection('players').doc(req.body.id).set(req.body, { merge: true });
       res.json({ success: true });
     } catch (err: any) {
+      console.error('POST /players failed:', err);
       res.status(500).json({ error: err.message });
     }
   });
@@ -118,16 +122,18 @@ async function startServer() {
         .filter(p => p.id && p.name && !p.isPlaceholder);
       res.json(periods);
     } catch (err) {
+      console.error('GET /periods failed:', err);
       res.json([]);
     }
   });
 
   apiRouter.post('/periods', authMiddleware, async (req, res) => {
     try {
-      if (!req.body || !req.body.id) throw new Error('Missing ID');
+      if (!req.body || !req.body.id) return res.status(400).json({ error: 'Missing Period ID' });
       await db.collection('periods').doc(req.body.id).set(req.body, { merge: true });
       res.json({ success: true });
     } catch (err: any) {
+      console.error('POST /periods failed:', err);
       res.status(500).json({ error: err.message });
     }
   });
@@ -141,16 +147,20 @@ async function startServer() {
     }
   });
 
-  // API Catch-all
+  // Health check
+  apiRouter.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+  // API Catch-all (Force JSON)
   apiRouter.all('*', (req, res) => {
     res.status(404).json({ error: `API endpoint ${req.method} ${req.url} not found` });
   });
 
-  // Mount API Router BEFORE Static Fallback
+  // --- 4. MOUNT API (PRIORITY #1) ---
   app.use('/api', apiRouter);
 
-  // --- 4. Static Files & SPA Fallback (Last Priority) ---
+  // --- 5. STATIC FILES & SPA (FALLBACK) ---
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
@@ -165,7 +175,8 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`[READY] App Running on port ${PORT}`);
+    console.log(`[INFO] DB: ${databaseId}, Project: ${projectId}`);
   });
 }
 
