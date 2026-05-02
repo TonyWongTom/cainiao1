@@ -27,14 +27,6 @@ const App: React.FC = () => {
 
   // Load initial data and subscribe to real-time updates
   useEffect(() => {
-    // Add a safety timeout to not show loading forever
-    const loadingTimeout = setTimeout(() => {
-      if (isLoading) {
-        setError("连接数据库超时，请检查配置或网络。");
-        setIsLoading(false);
-      }
-    }, 8000);
-
     const unsubPlayers = dbService.subscribeToPlayers((syncedPlayers) => {
       setPlayers(syncedPlayers);
       if (syncedPlayers.length === 0) {
@@ -52,7 +44,6 @@ const App: React.FC = () => {
     const unsubPeriods = dbService.subscribeToPeriods((syncedPeriods) => {
       setPeriods(syncedPeriods);
       setIsLoading(false);
-      clearTimeout(loadingTimeout);
     });
 
     return () => {
