@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { dbService, getAccessPassword } from '../services/dbService';
 
 interface PasswordGateProps {
   children: React.ReactNode;
@@ -12,10 +13,10 @@ const PasswordGate: React.FC<PasswordGateProps> = ({ children }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const correctPassword = import.meta.env.VITE_APP_PASSWORD || 'cainiao';
-    if (password === correctPassword) {
+    const success = await dbService.login(password);
+    if (success) {
       setIsAuthorized(true);
       localStorage.setItem('isAuthorized', 'true');
       setError(false);
@@ -24,6 +25,23 @@ const PasswordGate: React.FC<PasswordGateProps> = ({ children }) => {
       setTimeout(() => setError(false), 2000);
     }
   };
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const storedAuth = localStorage.getItem('isAuthorized') === 'true';
+      if (storedAuth) {
+        const password = getAccessPassword();
+        const success = await dbService.login(password);
+        if (!success) {
+          setIsAuthorized(false);
+          localStorage.removeItem('isAuthorized');
+        } else {
+           setIsAuthorized(true);
+        }
+      }
+    };
+    checkAuth();
+  }, []);
 
   if (isAuthorized) {
     return <>{children}</>;

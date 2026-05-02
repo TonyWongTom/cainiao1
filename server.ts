@@ -13,7 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 8080;
-const ACCESS_PASSWORD = 'cainiao';
+const ACCESS_PASSWORD = process.env.VITE_APP_PASSWORD || process.env.APP_PASSWORD || 'cainiao';
 
 async function startServer() {
   const app = express();
@@ -94,6 +94,15 @@ async function startServer() {
     res.status(401).json({ error: 'Unauthorized' });
   };
 
+  // Login
+  apiRouter.post('/login', (req, res) => {
+    if (req.body && req.body.password === ACCESS_PASSWORD) {
+      res.status(200).json({ success: true });
+    } else {
+      res.status(401).json({ error: 'Unauthorized' });
+    }
+  });
+
   // Players
   apiRouter.get('/players', async (req, res) => {
     try {
@@ -108,7 +117,7 @@ async function startServer() {
     try {
       if (!req.body || !req.body.id) throw new Error('Missing ID');
       await db.collection('players').doc(req.body.id).set(req.body, { merge: true });
-      res.json({ success: true });
+      res.status(201).json({ success: true, id: req.body.id });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -137,7 +146,7 @@ async function startServer() {
     try {
       if (!req.body || !req.body.id) throw new Error('Missing ID');
       await db.collection('periods').doc(req.body.id).set(req.body, { merge: true });
-      res.json({ success: true });
+      res.status(201).json({ success: true, id: req.body.id });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

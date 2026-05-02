@@ -1,7 +1,8 @@
 import { Player, Period } from '../types';
 
-const ACCESS_PASSWORD = 'cainiao';
 const API_BASE = '/api';
+
+export const getAccessPassword = () => localStorage.getItem('app_password') || 'cainiao';
 
 export enum OperationType {
   CREATE = 'create',
@@ -19,7 +20,7 @@ async function apiRequest(path: string, options: RequestInit = {}) {
   
   const headers = {
     'Content-Type': 'application/json',
-    'X-API-Password': ACCESS_PASSWORD,
+    'X-API-Password': getAccessPassword(),
     ...(options.headers || {}),
   };
 
@@ -59,6 +60,24 @@ async function apiRequest(path: string, options: RequestInit = {}) {
 }
 
 export const dbService = {
+  async login(password: string): Promise<boolean> {
+    try {
+      const res = await apiRequest('/login', {
+        method: 'POST',
+        headers: { 'X-API-Password': password },
+        body: JSON.stringify({ password }),
+      });
+      if (res && res.success) {
+        localStorage.setItem('app_password', password);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Login failed:', error);
+      return false;
+    }
+  },
+
   // Players
   async getPlayers(): Promise<Player[]> {
     try {
@@ -72,12 +91,16 @@ export const dbService = {
 
   async savePlayer(player: Player): Promise<boolean> {
     try {
-      await apiRequest('/players', {
+      const resp = await apiRequest('/players', {
         method: 'POST',
         body: JSON.stringify(player),
       });
-      console.log('✅ 云端写入确认成功！');
-      return true;
+      if (resp && resp.success && resp.id) {
+        console.log('✅ 云端写入确认成功！ID:', resp.id);
+        return true;
+      } else {
+        throw new Error('未收到有效的云端返回ID');
+      }
     } catch (e: any) {
       alert('❌ 写入云端失败：' + e.message);
       console.error('详细错误:', e);
@@ -108,12 +131,18 @@ export const dbService = {
 
   async savePeriod(period: Period): Promise<boolean> {
     try {
-      await apiRequest('/periods', {
+      const resp = await apiRequest('/periods', {
         method: 'POST',
         body: JSON.stringify(period),
       });
-      return true;
+      if (resp && resp.success && resp.id) {
+        console.log('✅ 云端写入确认成功！ID:', resp.id);
+        return true;
+      } else {
+        throw new Error('未收到有效的云端返回ID');
+      }
     } catch (error: any) {
+      alert('❌ 写入云端失败：' + error.message);
       console.error('Failed to save period:', error);
       return false;
     }
