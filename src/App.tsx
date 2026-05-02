@@ -15,6 +15,15 @@ const App: React.FC = () => {
   const [periods, setPeriods] = useState<Period[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notification, setNotification] = useState<{message: string, type: 'error' | 'success'} | null>(null);
+
+  // Clear notification after 5 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   // Load initial data and subscribe to real-time updates
   useEffect(() => {
@@ -27,11 +36,16 @@ const App: React.FC = () => {
     }, 8000);
 
     const unsubPlayers = dbService.subscribeToPlayers((syncedPlayers) => {
+      setPlayers(syncedPlayers);
       if (syncedPlayers.length === 0) {
         // Initialize with default funders if totally empty (first run)
-        INITIAL_FUNDERS.forEach(p => dbService.savePlayer(p));
-      } else {
-        setPlayers(syncedPlayers);
+        INITIAL_FUNDERS.forEach(async (p) => {
+          try {
+            await dbService.savePlayer(p);
+          } catch (e) {
+            console.error("Failed to save initial player:", e);
+          }
+        });
       }
     });
 
@@ -61,37 +75,76 @@ const App: React.FC = () => {
   const handleSetPlayers: React.Dispatch<React.SetStateAction<Player[]>> = (action) => {
     const nextPlayers = typeof action === 'function' ? action(players) : action;
     
-    // Check for deletions
-    players.forEach(p => {
-      if (!nextPlayers.find(np => np.id === p.id)) {
-        dbService.deletePlayer(p.id);
-      }
-    });
+    // Update local state immediately (Optimistic UI)
+    const oldPlayers = [...players];
+    setPlayers(nextPlayers);
     
-    // Check for additions/updates
-    nextPlayers.forEach(p => {
-      const existing = players.find(ep => ep.id === p.id);
-      if (!existing || JSON.stringify(existing) !== JSON.stringify(p)) {
-        dbService.savePlayer(p);
+    // Process changes
+    const processChanges = async () => {
+      try {
+        // Check for deletions
+        for (const p of players) {
+          if (!nextPlayers.find(np => np.id === p.id)) {
+            const ok = await dbService.deletePlayer(p.id);
+            if (!ok) throw new Error("删除成员失败");
+          }
+        }
+        
+        // Check for additions/updates
+        for (const p of nextPlayers) {
+          const existing = players.find(ep => ep.id === p.id);
+          if (!existing || JSON.stringify(existing) !== JSON.stringify(p)) {
+            const ok = await dbService.savePlayer(p);
+            if (!ok) throw new Error(`保存成员 ${p.name} 失败`);
+          }
+        }
+      } catch (err: any) {
+        console.error("Sync error:", err);
+        setNotification({ 
+          message: "数据同步到服务器失败，请检查网络权限", 
+          type: 'error' 
+        });
+        // Rollback local state on fatal error
+        // setPlayers(oldPlayers); 
       }
-    });
+    };
+
+    processChanges();
   };
 
   const handleSetPeriods: React.Dispatch<React.SetStateAction<Period[]>> = (action) => {
     const nextPeriods = typeof action === 'function' ? action(periods) : action;
     
-    nextPeriods.forEach(p => {
-      const existing = periods.find(ep => ep.id === p.id);
-      if (!existing || JSON.stringify(existing) !== JSON.stringify(p)) {
-        dbService.savePeriod(p);
-      }
-    });
+    // Update local state immediately (Optimistic UI)
+    const oldPeriods = [...periods];
+    setPeriods(nextPeriods);
     
-    periods.forEach(p => {
-      if (!nextPeriods.find(np => np.id === p.id)) {
-        dbService.deletePeriod(p.id);
+    const processChanges = async () => {
+      try {
+        for (const p of nextPeriods) {
+          const existing = periods.find(ep => ep.id === p.id);
+          if (!existing || JSON.stringify(existing) !== JSON.stringify(p)) {
+            const ok = await dbService.savePeriod(p);
+            if (!ok) throw new Error(`保存周期 ${p.name} 失败`);
+          }
+        }
+        
+        for (const p of periods) {
+          if (!nextPeriods.find(np => np.id === p.id)) {
+            const ok = await dbService.deletePeriod(p.id);
+            if (!ok) throw new Error("删除周期失败");
+          }
+        }
+      } catch (err: any) {
+        console.error("Sync error:", err);
+        setNotification({ 
+          message: "周期数据同步失败", 
+          type: 'error' 
+        });
       }
-    });
+    };
+
+    processChanges();
   };
 
   const renderView = () => {
@@ -153,12 +206,29 @@ const App: React.FC = () => {
   return (
     <PasswordGate>
       <div className="flex flex-col h-screen max-w-md mx-auto bg-gray-50 relative overflow-hidden">
+        {/* Connection/Sync Toast */}
+        {notification && (
+          <div className={`fixed top-1 left-1/2 -translate-x-1/2 z-[300] px-6 py-2 rounded-2xl shadow-xl font-black text-xs animate-in slide-in-from-top duration-300 w-[90%] max-w-[320px] text-center ${
+            notification.type === 'error' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white shadow-emerald-200'
+          }`}>
+            <div className="flex items-center justify-center gap-2">
+              {notification.type === 'error' ? '⚠️' : '✅'} {notification.message}
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <header className="bg-emerald-600 text-white p-4 shadow-md sticky top-0 z-50 pt-safe shrink-0">
-          <h1 className="text-xl font-black flex items-center justify-center">
-            <span className="mr-2">🏸</span>
-            菜鸟基地小帮手
-          </h1>
+          <div className="flex flex-col items-center justify-center">
+            <h1 className="text-xl font-black flex items-center">
+              <span className="mr-2">🏸</span>
+              菜鸟基地小帮手
+            </h1>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <div className={`w-1.5 h-1.5 rounded-full ${isLoading ? 'bg-amber-400 animate-pulse' : 'bg-white'}`}></div>
+              <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-80">Syncing with Cloud</span>
+            </div>
+          </div>
         </header>
 
         {/* Main Content */}

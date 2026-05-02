@@ -96,21 +96,25 @@ export const dbService = {
     }
   },
 
-  async savePlayer(player: Player): Promise<void> {
+  async savePlayer(player: Player): Promise<boolean> {
     const path = `players/${player.id}`;
     try {
       await setDoc(doc(db, 'players', player.id), player);
+      return true;
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, path);
+      return false;
     }
   },
 
-  async deletePlayer(playerId: string): Promise<void> {
+  async deletePlayer(playerId: string): Promise<boolean> {
     const path = `players/${playerId}`;
     try {
       await deleteDoc(doc(db, 'players', playerId));
+      return true;
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, path);
+      return false;
     }
   },
 
@@ -127,21 +131,25 @@ export const dbService = {
     }
   },
 
-  async savePeriod(period: Period): Promise<void> {
+  async savePeriod(period: Period): Promise<boolean> {
     const path = `periods/${period.id}`;
     try {
       await setDoc(doc(db, 'periods', period.id), period);
+      return true;
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, path);
+      return false;
     }
   },
 
-  async deletePeriod(periodId: string): Promise<void> {
+  async deletePeriod(periodId: string): Promise<boolean> {
     const path = `periods/${periodId}`;
     try {
       await deleteDoc(doc(db, 'periods', periodId));
+      return true;
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, path);
+      return false;
     }
   },
 
