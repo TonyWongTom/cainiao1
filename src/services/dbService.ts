@@ -1,6 +1,17 @@
 import { Player, Period } from '../types';
 
-const API_BASE = '/api';
+const getApiBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    // For Firebase Hosting endpoints
+    if (hostname.includes('web.app') || hostname.includes('firebaseapp.com')) {
+      return 'https://cainiao1-707432563956.us-central1.run.app/api';
+    }
+  }
+  return '/api';
+};
+
+const API_BASE = getApiBaseUrl();
 
 export const getAccessPassword = () => localStorage.getItem('app_password') || 'cainiao';
 
@@ -104,7 +115,7 @@ export const dbService = {
     } catch (e: any) {
       alert('❌ 写入云端失败：' + e.message);
       console.error('详细错误:', e);
-      return false;
+      throw e;
     }
   },
 
@@ -114,7 +125,7 @@ export const dbService = {
       return true;
     } catch (error: any) {
       console.error('Failed to delete player:', error);
-      return false;
+      throw error;
     }
   },
 
@@ -144,7 +155,7 @@ export const dbService = {
     } catch (error: any) {
       alert('❌ 写入云端失败：' + error.message);
       console.error('Failed to save period:', error);
-      return false;
+      throw error;
     }
   },
 
@@ -154,7 +165,7 @@ export const dbService = {
       return true;
     } catch (error: any) {
       console.error('Failed to delete period:', error);
-      return false;
+      throw error;
     }
   },
 

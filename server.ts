@@ -13,7 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 8080;
-const ACCESS_PASSWORD = process.env.VITE_APP_PASSWORD || process.env.APP_PASSWORD || 'cainiao';
+const ACCESS_PASSWORD = process.env.VITE_ADMIN_PASSWORD || process.env.VITE_APP_PASSWORD || process.env.APP_PASSWORD || 'cainiao';
 
 async function startServer() {
   const app = express();

@@ -66,18 +66,13 @@ const App: React.FC = () => {
   const handleSetPlayers: React.Dispatch<React.SetStateAction<Player[]>> = (action) => {
     const nextPlayers = typeof action === 'function' ? action(players) : action;
     
-    // Update local state immediately (Optimistic UI)
-    const oldPlayers = [...players];
-    setPlayers(nextPlayers);
-    
     // Process changes
     const processChanges = async () => {
       try {
         // Check for deletions
         for (const p of players) {
           if (!nextPlayers.find(np => np.id === p.id)) {
-            const ok = await dbService.deletePlayer(p.id);
-            if (!ok) throw new Error("删除成员失败");
+            await dbService.deletePlayer(p.id);
           }
         }
         
@@ -85,18 +80,25 @@ const App: React.FC = () => {
         for (const p of nextPlayers) {
           const existing = players.find(ep => ep.id === p.id);
           if (!existing || JSON.stringify(existing) !== JSON.stringify(p)) {
-            const ok = await dbService.savePlayer(p);
-            if (!ok) throw new Error(`保存成员 ${p.name} 失败`);
+            await dbService.savePlayer(p);
           }
         }
+        
+        // Update local state ONLY after successful DB operations
+        setPlayers(nextPlayers);
+        setNotification({ 
+          message: "人员更新成功", 
+          type: 'success' 
+        });
       } catch (err: any) {
         console.error("Sync error:", err);
         setNotification({ 
-          message: "数据同步到服务器失败，请检查网络权限", 
+          message: "数据保存失败，请检查网络权限: " + err.message, 
           type: 'error' 
         });
-        // Rollback local state on fatal error
-        // setPlayers(oldPlayers); 
+        // Fetch latest from server to ensure sync
+        const currentPlayers = await dbService.getPlayers();
+        setPlayers(currentPlayers);
       }
     };
 
@@ -106,32 +108,36 @@ const App: React.FC = () => {
   const handleSetPeriods: React.Dispatch<React.SetStateAction<Period[]>> = (action) => {
     const nextPeriods = typeof action === 'function' ? action(periods) : action;
     
-    // Update local state immediately (Optimistic UI)
-    const oldPeriods = [...periods];
-    setPeriods(nextPeriods);
-    
     const processChanges = async () => {
       try {
         for (const p of nextPeriods) {
           const existing = periods.find(ep => ep.id === p.id);
           if (!existing || JSON.stringify(existing) !== JSON.stringify(p)) {
-            const ok = await dbService.savePeriod(p);
-            if (!ok) throw new Error(`保存周期 ${p.name} 失败`);
+            await dbService.savePeriod(p);
           }
         }
         
         for (const p of periods) {
           if (!nextPeriods.find(np => np.id === p.id)) {
-            const ok = await dbService.deletePeriod(p.id);
-            if (!ok) throw new Error("删除周期失败");
+            await dbService.deletePeriod(p.id);
           }
         }
+        
+        // Update local state ONLY after successful DB operations
+        setPeriods(nextPeriods);
+        setNotification({ 
+          message: "结算信息更新成功", 
+          type: 'success' 
+        });
       } catch (err: any) {
         console.error("Sync error:", err);
         setNotification({ 
-          message: "周期数据同步失败", 
+          message: "数据保存失败，请检查网络权限: " + err.message, 
           type: 'error' 
         });
+        // Fetch latest from server to ensure sync
+        const currentPeriods = await dbService.getPeriods();
+        setPeriods(currentPeriods);
       }
     };
 
