@@ -20,14 +20,10 @@ const missingKeys = Object.entries(firebaseConfig)
 
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore with forced long polling settings for maximum reliability
+// Initialize Firestore with forced long polling and disabled streams for maximum reliability
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
-  experimentalAutoDetectLongPolling: false,
-  useFetchStreams: false,
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager()
-  })
+  useFetchStreams: false 
 } as any, databaseId);
 
 // Add diagnostic logging for database targeting

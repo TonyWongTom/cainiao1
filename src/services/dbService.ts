@@ -59,6 +59,7 @@ export const dbService = {
     try {
       const q = query(collection(db, path), orderBy('name'));
       const snapshot = await getDocs(q);
+      console.log('数据来源:', snapshot.metadata.fromCache ? '本地缓存' : '服务器云端');
       console.log('Firestore 返回的原始数据 (getPlayers):', snapshot.docs.map(d => d.data()));
       return snapshot.docs.map(doc => doc.data() as Player);
     } catch (error) {
