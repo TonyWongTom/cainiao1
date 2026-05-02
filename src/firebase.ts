@@ -21,7 +21,7 @@ export const db = initializeFirestore(app, {
   experimentalAutoDetectLongPolling: false,
   useFetchStreams: false,
   ignoreUndefinedProperties: true
-} as any, databaseId);
+} as any);
 
 // Add diagnostic logging for database targeting
 console.log('Firebase 正在访问的数据库 ID:', (db as any)._databaseId.database);
