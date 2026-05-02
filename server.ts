@@ -29,14 +29,15 @@ async function startServer() {
                     process.env.FIREBASE_PROJECT_ID || 
                     'bjhpyh1';
 
-  // Explicitly default to undefined for standard instance initialization
+  // Explicitly default to '(default)' for initialization as requested
   const databaseId = (process.env.VITE_FIREBASE_DATABASE_ID && process.env.VITE_FIREBASE_DATABASE_ID !== '(default)') 
     ? process.env.VITE_FIREBASE_DATABASE_ID 
-    : undefined;
+    : '(default)';
 
   console.log('--- Firebase Admin Diagnostic Startup ---');
   console.log('Backend connected to project (Target):', projectId);
-  console.log('Backend connected to database (Target):', databaseId || '(default)');
+  console.log('Backend connected to database (Target):', databaseId);
+  console.log('Value of process.env.PROJECT_ID:', process.env.PROJECT_ID || 'undefined (using bjhpyh1)');
   console.log('Service Account present:', !!serviceAccount);
   if (serviceAccount) {
     console.log('Service Account Project ID:', serviceAccount.project_id);
@@ -49,27 +50,25 @@ async function startServer() {
           credential: serviceAccount ? admin.credential.cert(serviceAccount) : admin.credential.applicationDefault(),
           projectId: projectId,
         });
-        console.log(`Firebase Admin initialized successfully for ${projectId}`);
+        console.log(`Firebase Admin initialized successfully برای ${projectId}`);
       }
     } catch (err) {
       console.error('Failed to initialize Firebase Admin:', err);
     }
-  } else {
-    console.error('CRITICAL: Project ID is missing.');
   }
 
   // Use the specified database ID if provided
   let db: admin.firestore.Firestore;
   try {
     const app = admin.app();
-    // Standard initialization for (default), specified ID otherwise
-    db = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
+    // Explicitly pass databaseId as requested by user
+    db = getFirestore(app, databaseId);
     
-    console.log(`Firestore instance attached. Project: ${app.options.projectId}, Database: ${databaseId || '(default)'}`);
+    console.log(`Firestore instance attached. Project: ${app.options.projectId}, Database: ${databaseId}`);
   } catch (err) {
     console.error('Failed to initialize Firestore instance:', err);
     try {
-      db = getFirestore(admin.app());
+      db = getFirestore(admin.app(), '(default)');
     } catch (fallbackErr) {
       db = getFirestore();
     }
@@ -96,14 +95,14 @@ async function startServer() {
       console.log('--- Database Integrity Check Started ---');
       const collections = await db.listCollections();
       const ids = collections.map(c => c.id);
-      console.log('Current collections:', ids.length > 0 ? ids.join(', ') : '(Empty Database)');
+      console.log('Current collections in root:', ids.length > 0 ? ids.join(', ') : '(Empty Database)');
 
       // Standardize collection names to lowercase (user request)
       const COLLECTIONS_TO_INIT = ['players', 'periods'];
       
       for (const collName of COLLECTIONS_TO_INIT) {
         if (!ids.includes(collName)) {
-          console.log(`Initializing "${collName}" collection with a placeholder...`);
+          console.log(`Initializing root collection "${collName}" with a placeholder...`);
           try {
             await db.collection(collName).doc('_init_').set({ 
               id: '_init_', 
@@ -146,8 +145,14 @@ async function startServer() {
   // API Routes
   app.get('/api/players', async (req, res) => {
     try {
-      console.log('API Fetching players from collection: "players"');
+      console.log('API Fetching players from root collection: "players"');
       const snapshot = await db.collection('players').get();
+      
+      if (snapshot.empty) {
+        console.log('API "players" collection is empty, returning []');
+        return res.json([]);
+      }
+
       const players = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() } as any))
         .filter(p => p.id && p.name && !p.isPlaceholder && p.id !== '_init_');
@@ -167,9 +172,9 @@ async function startServer() {
   app.post('/api/players', authMiddleware, async (req, res) => {
     try {
       const playerData = req.body;
-      console.log('API Saving player:', playerData.id);
-      if (!playerData.id) {
-        return res.status(400).json({ error: 'Player ID is required' });
+      console.log('API Saving player to root "players":', playerData.id);
+      if (!playerData || !playerData.id) {
+        return res.status(400).json({ error: 'Player data with ID is required' });
       }
       await db.collection('players').doc(playerData.id).set(playerData);
       console.log('API Player saved successfully');
@@ -192,8 +197,14 @@ async function startServer() {
 
   app.get('/api/periods', async (req, res) => {
     try {
-      console.log('API Fetching periods from collection: "periods"');
+      console.log('API Fetching periods from root collection: "periods"');
       const snapshot = await db.collection('periods').get();
+      
+      if (snapshot.empty) {
+        console.log('API "periods" collection is empty, returning []');
+        return res.json([]);
+      }
+
       const periods = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() } as any))
         .filter(p => p.id && p.name && !p.isPlaceholder && p.id !== '_init_');
@@ -213,9 +224,9 @@ async function startServer() {
   app.post('/api/periods', authMiddleware, async (req, res) => {
     try {
       const periodData = req.body;
-      console.log('API Saving period:', periodData.id);
-      if (!periodData.id) {
-        return res.status(400).json({ error: 'Period ID is required' });
+      console.log('API Saving period to root "periods":', periodData.id);
+      if (!periodData || !periodData.id) {
+        return res.status(400).json({ error: 'Period data with ID is required' });
       }
       await db.collection('periods').doc(periodData.id).set(periodData);
       console.log('API Period saved successfully');
@@ -234,6 +245,11 @@ async function startServer() {
       console.error('API Error (DELETE /periods):', err);
       res.status(500).json({ error: err.message, code: err.code, details: err.details });
     }
+  });
+
+  // Catch-all for API routes that are NOT handled above to prevent falling through to SPA HTML
+  app.all('/api/*', (req, res) => {
+    res.status(404).json({ error: `API Route ${req.method} ${req.url} not found` });
   });
 
   // Vite middleware for development
