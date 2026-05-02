@@ -3,15 +3,7 @@ import React from 'react';
 
 export const DEFAULT_SESSION_FEE = 25;
 
-export const INITIAL_FUNDERS = [
-  "晓菲", "潜水鱼", "东哥", "安然", "moli", "YH", "WD", "刘永祥", "李哥", "心远"
-].map((name, index) => ({
-  id: `funder-${index}`,
-  name,
-  type: '包月' as any,
-  defaultFee: 0,
-  isFunder: true
-}));
+export const INITIAL_FUNDERS: any[] = [];
 
 export const Icons = {
   Home: () => (

@@ -58,6 +58,7 @@ export const dbService = {
     try {
       const q = query(collection(db, path), orderBy('name'));
       const snapshot = await getDocs(q);
+      console.log('Firestore 返回的原始数据 (getPlayers):', snapshot.docs.map(d => d.data()));
       return snapshot.docs.map(doc => doc.data() as Player);
     } catch (error) {
       handleFirestoreError(error, OperationType.LIST, path);
@@ -130,6 +131,7 @@ export const dbService = {
   subscribeToPlayers(callback: (players: Player[]) => void) {
     return onSnapshot(collection(db, 'players'), (snapshot) => {
       const players = snapshot.docs.map(doc => doc.data() as Player);
+      console.log('Firestore 返回的原始数据 (subscribeToPlayers):', players);
       callback(players);
     }, (error) => handleFirestoreError(error, OperationType.GET, 'players'));
   },
