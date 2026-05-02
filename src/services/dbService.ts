@@ -55,6 +55,7 @@ export const dbService = {
   // Players
   async getPlayers(): Promise<Player[]> {
     const path = 'players';
+    console.log('正在从集合抓取数据:', path);
     try {
       const q = query(collection(db, path), orderBy('name'));
       const snapshot = await getDocs(q);

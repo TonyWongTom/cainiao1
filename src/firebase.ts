@@ -30,4 +30,7 @@ export const db = initializeFirestore(app, {
   })
 } as any, databaseId);
 
+// Add diagnostic logging for database targeting
+console.log('Firebase 正在访问的数据库 ID:', (db as any)._databaseId.database);
+
 export const auth = getAuth(app);
