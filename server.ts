@@ -17,13 +17,18 @@ const ACCESS_PASSWORD = 'cainiao';
 
 async function startServer() {
   const app = express();
-  // --- Middleware ---
-  app.use(cors());
+  
+  // --- Middleware (Critical Order: TOP) ---
+  app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'X-API-Password', 'Authorization']
+  }));
   app.use(express.json());
 
-  // Logging Middleware (Requested by user)
+  // Logging Middleware
   app.use((req, res, next) => {
-    console.log(`[Request] ${req.method} ${req.url}`);
+    console.log(`[Incoming] ${req.method} ${req.url}`);
     next();
   });
 
@@ -96,76 +101,58 @@ async function startServer() {
            msg.includes('DATABASE_NOT_FOUND');
   };
 
+  // --- API Routes Definition (Strict Isolation) ---
+  const apiRouter = express.Router();
+  
   // Auth Middleware
   const authMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const password = req.headers['x-api-password'];
     if (password === ACCESS_PASSWORD) {
       next();
     } else {
+      console.warn('[API Auth] Unauthorized access attempt');
       res.status(401).json({ error: 'Unauthorized: Invalid password' });
     }
   };
 
-  // --- API Routes Definition (Strict Isolation) ---
-  const apiRouter = express.Router();
   console.log('Registering API routes on /api prefix...');
 
   // Diagnostic endpoint
-  apiRouter.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+  apiRouter.get('/health', (req, res) => res.json({ status: 'ok' }));
 
   // Players Management
   apiRouter.get('/players', async (req, res) => {
     try {
-      console.log('[API] GET /players - Fetching from Firestore...');
       if (!db) throw new Error('Firestore not initialized');
-      
       const snapshot = await db.collection('players').get();
       const players = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() } as any))
         .filter(p => p.id && p.name && !p.isPlaceholder && p.id !== '_init_');
-      
-      console.log(`[API] GET /players - Success, found ${players.length} valid players`);
       res.json(players);
     } catch (err: any) {
-      console.error('[API] Error GET /players:', err.message);
-      if (isNotFoundError(err)) {
-        console.warn('[API] players collection not found, returning empty array');
-        return res.json([]);
-      }
-      res.status(500).json({ error: err.message, type: 'firestore_error' });
+      if (isNotFoundError(err)) return res.json([]);
+      res.status(500).json({ error: err.message });
     }
   });
 
   apiRouter.post('/players', authMiddleware, async (req, res) => {
     try {
       const playerData = req.body;
-      console.log('[API] POST /players - Saving player:', playerData?.id);
-      if (!playerData || !playerData.id) {
-        return res.status(400).json({ error: 'Player data with ID is required' });
-      }
+      if (!playerData || !playerData.id) return res.status(400).json({ error: 'Player ID required' });
       if (!db) throw new Error('Firestore not initialized');
-
-      await db.collection('players').doc(playerData.id).set({
-        ...playerData,
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
-      
-      console.log('[API] POST /players - Successfully saved player');
+      await db.collection('players').doc(playerData.id).set(playerData, { merge: true });
       res.json({ success: true });
     } catch (err: any) {
-      console.error('[API] Error POST /players:', err.message);
       res.status(500).json({ error: err.message });
     }
   });
 
   apiRouter.delete('/players/:id', authMiddleware, async (req, res) => {
     try {
-      console.log('[API] DELETE /players - ID:', req.params.id);
       if (!db) throw new Error('Firestore not initialized');
       await db.collection('players').doc(req.params.id).delete();
       res.json({ success: true });
     } catch (err: any) {
-      console.error('[API] Error DELETE /players:', err.message);
       res.status(500).json({ error: err.message });
     }
   });
@@ -173,22 +160,14 @@ async function startServer() {
   // Periods Management
   apiRouter.get('/periods', async (req, res) => {
     try {
-      console.log('[API] GET /periods - Fetching from Firestore...');
       if (!db) throw new Error('Firestore not initialized');
-      
       const snapshot = await db.collection('periods').get();
       const periods = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() } as any))
         .filter(p => p.id && p.name && !p.isPlaceholder && p.id !== '_init_');
-        
-      console.log(`[API] GET /periods - Success, found ${periods.length} valid periods`);
       res.json(periods);
     } catch (err: any) {
-      console.error('[API] Error GET /periods:', err.message);
-      if (isNotFoundError(err)) {
-        console.warn('[API] periods collection not found, returning empty array');
-        return res.json([]);
-      }
+      if (isNotFoundError(err)) return res.json([]);
       res.status(500).json({ error: err.message });
     }
   });
@@ -196,55 +175,40 @@ async function startServer() {
   apiRouter.post('/periods', authMiddleware, async (req, res) => {
     try {
       const periodData = req.body;
-      console.log('[API] POST /periods - Saving period:', periodData?.id);
-      if (!periodData || !periodData.id) {
-        return res.status(400).json({ error: 'Period data with ID is required' });
-      }
+      if (!periodData || !periodData.id) return res.status(400).json({ error: 'Period ID required' });
       if (!db) throw new Error('Firestore not initialized');
-
-      await db.collection('periods').doc(periodData.id).set({
-        ...periodData,
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
-      
-      console.log('[API] POST /periods - Successfully saved period');
+      await db.collection('periods').doc(periodData.id).set(periodData, { merge: true });
       res.json({ success: true });
     } catch (err: any) {
-      console.error('[API] Error POST /periods:', err.message);
       res.status(500).json({ error: err.message });
     }
   });
 
   apiRouter.delete('/periods/:id', authMiddleware, async (req, res) => {
     try {
-      console.log('[API] DELETE /periods - ID:', req.params.id);
       if (!db) throw new Error('Firestore not initialized');
       await db.collection('periods').doc(req.params.id).delete();
       res.json({ success: true });
     } catch (err: any) {
-      console.error('[API] Error DELETE /periods:', err.message);
       res.status(500).json({ error: err.message });
     }
   });
 
-  // Strict API 404 Handler (Returns JSON instead of HTML)
+  // Strict API 404 Handler
   apiRouter.all('*', (req, res) => {
-    console.warn(`[API Router 404] No handler matched ${req.method} ${req.url}`);
-    res.status(404).json({ 
-      error: `API endpoint ${req.method} ${req.url} not found`,
-      availableEndpoints: ['/players', '/periods', '/health']
-    });
+    res.status(404).json({ error: `API endpoint ${req.method} ${req.url} not found` });
   });
 
-  // --- MOUNTING (Priority: API first) ---
+  // --- 1. API ROUTES (ABSOLUTE PRIORITY) ---
+  console.log('Registering API routes on /api prefix (Strict Priority)...');
   app.use('/api', apiRouter);
 
-  // Fallback for any /api prefixed request that slipped past the router
-  app.all('/api/*', (req, res) => {
-    res.status(404).json({ error: `API route reached fallback: ${req.method} ${req.originalUrl}` });
+  // Catch-all for /api prefix to ensure JSON response for missing endpoints
+  app.use('/api/*', (req, res) => {
+    res.status(404).json({ error: `API route ${req.originalUrl} not found` });
   });
 
-  // --- Static & Vite (Priority: LAST) ---
+  // --- 2. STATIC FILES & SPA (FALLBACK) ---
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -252,7 +216,8 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
+    const distPath = path.join(__dirname, 'dist');
+    console.log('Serving static files from:', distPath);
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));

@@ -26,21 +26,16 @@ async function apiRequest(path: string, options: RequestInit = {}) {
     const response = await fetch(url, { ...options, headers });
     
     if (!response.ok) {
-      let errorMsg = `HTTP error! status: ${response.status}`;
-      try {
-        const errorData = await response.json();
-        errorMsg = errorData.error || errorMsg;
-      } catch (e) {
-        // If it's not JSON, it might be HTML (SPA fallback)
-        const text = await response.text();
-        if (text.includes('<!DOCTYPE html>')) {
-          errorMsg = `API returned HTML instead of JSON. Check backend route order and URL alignment.`;
-        }
-      }
-      throw new Error(errorMsg);
+      const errorText = await response.text(); // Read exactly once
+      console.error('真正的后端报错是:', errorText);
+      throw new Error(errorText);
     }
     
-    return response.json();
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return await response.json();
+    }
+    return { success: true };
   } catch (err: any) {
     console.error(`[dbService] API Request Failed: ${url}`, err);
     throw err;
