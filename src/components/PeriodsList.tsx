@@ -34,13 +34,13 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
     startDate: new Date().toISOString().split('T')[0],
     endDate: '',
     courtCost: 0,
-    funderIds: funderPool.map(p => p.id),
+    funderIds: Array.isArray(funderPool) ? funderPool.map(p => p.id) : [],
     sessions: [],
-    playerConfigs: players.map(p => ({
+    playerConfigs: Array.isArray(players) ? players.map(p => ({
       playerId: p.id,
       type: PlayerType.PER_SESSION,
       fee: 25
-    }))
+    })) : []
   };
 
   const [periodFormData, setPeriodFormData] = useState<Partial<Period>>(initialPeriodData);
@@ -360,7 +360,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
               <span className="text-[8px] bg-white/50 px-2 py-0.5 rounded italic opacity-70">勾选者将平摊基础费</span>
             </p>
             <div className="grid grid-cols-3 gap-2">
-              {funderPool.map(f => {
+      {Array.isArray(funderPool) && funderPool.map(f => {
                 const isSelected = periodFormData.funderIds?.includes(f.id);
                 return (
                   <button key={f.id} type="button" onClick={() => {
@@ -379,7 +379,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
               👤 人员性质及单价设置 (本期生效)
             </p>
             <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
-              {players.map(p => {
+              {Array.isArray(players) && players.map(p => {
                 const config = periodFormData.playerConfigs?.find(c => c.playerId === p.id) || {
                   playerId: p.id,
                   type: PlayerType.PER_SESSION,
@@ -462,7 +462,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
             <div>
               <p className="text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest">第一步：选择出席成员 ({selectedAttendees.length}):</p>
               <div className="flex flex-wrap gap-1.5 p-3 bg-gray-50 rounded-2xl border border-gray-100">
-                {players.map(p => {
+                {Array.isArray(players) && players.map(p => {
                   const isSelected = selectedAttendees.find(a => a.playerId === p.id);
                   const displayFee = calculatePotentialFee(p, periodId);
                   return (
@@ -479,7 +479,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
               <div>
                 <p className="text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest">第二步：设置实收金额 (¥):</p>
                 <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                  {selectedAttendees.map(attendee => {
+                  {Array.isArray(selectedAttendees) && selectedAttendees.map(attendee => {
                     const player = players.find(p => p.id === attendee.playerId);
                     return (
                       <div key={attendee.playerId} className="flex justify-between items-center bg-gray-50 p-2 rounded-xl border border-gray-100">
@@ -535,7 +535,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
       </div>
 
       <div className="space-y-4">
-        {sortedPeriods.map(period => {
+        {Array.isArray(sortedPeriods) && sortedPeriods.map(period => {
           const isExpanded = expandedPeriodId === period.id;
           const totalIncome = period.sessions.reduce((acc, s) => acc + s.attendees.reduce((sum, a) => sum + a.fee, 0) - (s.sessionCost || 0), 0);
           return (
@@ -594,7 +594,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
                       <button onClick={(e) => { e.stopPropagation(); setEditingPeriodId(period.id); setPeriodFormData({ ...period, playerConfigs: players.map(p => period.playerConfigs?.find(c => c.playerId === p.id) || { playerId: p.id, type: PlayerType.PER_SESSION, fee: 25 }) }); }} className="text-[9px] text-emerald-600 font-black px-2 py-1 bg-emerald-50 rounded-lg">修改配置</button>
                     </div>
                     <div className="flex flex-wrap gap-1.5 p-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
-                      {period.funderIds.map(fid => (
+                      {Array.isArray(period.funderIds) && period.funderIds.map(fid => (
                         <span key={fid} className="text-[10px] bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full font-black border border-amber-100">
                           {players.find(pl => pl.id === fid)?.name || '未知'}
                         </span>
@@ -619,7 +619,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
                       </button>
                     </div>
                     <div className="space-y-3">
-                      {period.sessions.map(session => (
+                      {Array.isArray(period.sessions) && period.sessions.map(session => (
                         <div key={session.id} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
                           <div className="flex justify-between items-center mb-2">
                              <div className="flex flex-col">
@@ -650,7 +650,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
                              </div>
                           </div>
                           <div className="flex flex-wrap gap-1">
-                            {session.attendees.map(a => (
+                            {Array.isArray(session.attendees) && session.attendees.map(a => (
                               <span key={a.playerId} className="text-[9px] bg-gray-50 text-gray-500 px-2 py-0.5 rounded border border-gray-100">
                                 {players.find(pl => pl.id === a.playerId)?.name} {a.fee > 0 ? `(¥${a.fee})` : ''}
                               </span>

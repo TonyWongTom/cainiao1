@@ -251,7 +251,7 @@ const PlayersList: React.FC<PlayersListProps> = ({ players, setPlayers, periods 
       )}
 
       <div className="space-y-3">
-        {players.map(player => {
+        {Array.isArray(players) && players.map(player => {
           if (editingId === player.id) {
             return (
               <div key={player.id} className="animate-in slide-in-from-top-1 duration-200">
@@ -304,7 +304,7 @@ const PlayersList: React.FC<PlayersListProps> = ({ players, setPlayers, periods 
         })}
       </div>
       
-      {players.length === 0 && !isAdding && (
+      {(!Array.isArray(players) || players.length === 0) && !isAdding && (
         <div className="text-center py-20 text-gray-300">
            <p className="text-4xl mb-4 opacity-20 text-emerald-500">🏸</p>
            <p className="text-sm font-black uppercase tracking-widest">暂无人员记录</p>

@@ -16,33 +16,35 @@ const FinanceReport: React.FC<FinanceReportProps> = ({ periods, players, initial
     : (periods.length > 0 ? periods[0] : null);
 
   const calculatePeriodStats = (period: Period) => {
-    const grossIncome = period.sessions.reduce((acc, s) => acc + s.attendees.reduce((sum, a) => sum + a.fee, 0), 0);
-    const sessionCosts = period.sessions.reduce((acc, s) => acc + (s.sessionCost || 0), 0);
+    const grossIncome = Array.isArray(period.sessions) ? period.sessions.reduce((acc, s) => acc + (Array.isArray(s.attendees) ? s.attendees.reduce((sum, a) => sum + (a.fee || 0), 0) : 0), 0) : 0;
+    const sessionCosts = Array.isArray(period.sessions) ? period.sessions.reduce((acc, s) => acc + (s.sessionCost || 0), 0) : 0;
     
     // The user wants session-specific income to be net (fees - sessionCost)
     const netTotalIncome = grossIncome - sessionCosts;
     
     // Total expenses = Just the Base court cost, since sessionCosts are already deducted from income
-    const baseCourtCost = period.courtCost;
+    const baseCourtCost = period.courtCost || 0;
     const totalExpenses = baseCourtCost;
     
     const surplus = netTotalIncome - totalExpenses;
-    const funderCount = period.funderIds?.length || 0;
+    const funderCount = Array.isArray(period.funderIds) ? period.funderIds.length : 0;
     
     const investmentPerFunder = funderCount > 0 ? totalExpenses / funderCount : 0;
     const refundPerFunder = funderCount > 0 ? netTotalIncome / funderCount : 0;
 
     // Aggregate stats per player for this period
-    const playerBreakdown = period.sessions.reduce((acc, session) => {
-      session.attendees.forEach(att => {
-        if (!acc[att.playerId]) {
-          acc[att.playerId] = { count: 0, totalPaid: 0 };
-        }
-        acc[att.playerId].count += 1;
-        acc[att.playerId].totalPaid += att.fee;
-      });
+    const playerBreakdown = Array.isArray(period.sessions) ? period.sessions.reduce((acc, session) => {
+      if (Array.isArray(session.attendees)) {
+        session.attendees.forEach(att => {
+          if (!acc[att.playerId]) {
+            acc[att.playerId] = { count: 0, totalPaid: 0 };
+          }
+          acc[att.playerId].count += 1;
+          acc[att.playerId].totalPaid += (att.fee || 0);
+        });
+      }
       return acc;
-    }, {} as Record<string, { count: number; totalPaid: number }>);
+    }, {} as Record<string, { count: number; totalPaid: number }>) : {};
     
     return { 
       totalIncome: netTotalIncome, 
@@ -74,7 +76,7 @@ const FinanceReport: React.FC<FinanceReportProps> = ({ periods, players, initial
               onChange={(e) => onPeriodChange(e.target.value)}
               className="w-full bg-white border border-gray-100 rounded-2xl p-4 text-xs font-black text-emerald-700 outline-none appearance-none shadow-sm cursor-pointer"
             >
-              {periods.map((p) => (
+              {Array.isArray(periods) && periods.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name} ({formatMonthDay(p.startDate)})
                 </option>
@@ -168,7 +170,7 @@ const FinanceReport: React.FC<FinanceReportProps> = ({ periods, players, initial
                       <div className="divide-y divide-gray-100">
                         {Object.entries(stats.playerBreakdown).map(([pid, data]) => {
                           const playerName = players.find(p => p.id === pid)?.name || '未知';
-                          const isFunder = selectedPeriod.funderIds.includes(pid);
+                          const isFunder = Array.isArray(selectedPeriod.funderIds) && selectedPeriod.funderIds.includes(pid);
                           return (
                             <div key={pid} className="grid grid-cols-3 px-4 py-3 items-center">
                               <div className="flex items-center gap-1.5 overflow-hidden">
@@ -191,7 +193,7 @@ const FinanceReport: React.FC<FinanceReportProps> = ({ periods, players, initial
                   <div className="mt-6">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">当期集资背景</p>
                     <div className="flex flex-wrap gap-1.5">
-                      {selectedPeriod.funderIds.map(fid => (
+                      {Array.isArray(selectedPeriod.funderIds) && selectedPeriod.funderIds.map(fid => (
                         <span key={fid} className="text-[10px] bg-gray-50 text-gray-600 border border-gray-100 px-2 py-1 rounded-md font-bold">
                           {players.find(p => p.id === fid)?.name || '未知'}
                         </span>

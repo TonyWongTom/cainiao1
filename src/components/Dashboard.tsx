@@ -42,12 +42,12 @@ const Dashboard: React.FC<DashboardProps> = ({ players, periods, activePeriod, o
             onChange={(e) => onPeriodChange(e.target.value)}
             className="w-full bg-white border border-gray-100 rounded-2xl p-4 text-xs font-black text-emerald-700 outline-none appearance-none shadow-sm cursor-pointer"
           >
-            {periods.map((p) => (
+            {Array.isArray(periods) && periods.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
               </option>
             ))}
-            {periods.length === 0 && (
+            {(!Array.isArray(periods) || periods.length === 0) && (
               <option value="" disabled>暂无结算周期</option>
             )}
           </select>

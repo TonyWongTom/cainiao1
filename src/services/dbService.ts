@@ -46,7 +46,8 @@ export const dbService = {
   // Players
   async getPlayers(): Promise<Player[]> {
     try {
-      return await apiRequest('/players');
+      const data = await apiRequest('/players');
+      return Array.isArray(data) ? data : [];
     } catch (error: any) {
       console.error('Failed to get players:', error);
       return [];
@@ -81,7 +82,8 @@ export const dbService = {
   // Periods
   async getPeriods(): Promise<Period[]> {
     try {
-      return await apiRequest('/periods');
+      const data = await apiRequest('/periods');
+      return Array.isArray(data) ? data : [];
     } catch (error: any) {
       console.error('Failed to get periods:', error);
       return [];

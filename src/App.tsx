@@ -230,7 +230,7 @@ const App: React.FC = () => {
         {/* Modern Floating Tab Bar */}
         <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 px-4 pb-safe pointer-events-none">
           <nav className="mb-4 bg-white/90 backdrop-blur-xl border border-white/20 shadow-[0_-10px_30px_-5px_rgba(0,0,0,0.05),0_10px_20px_-5px_rgba(0,0,0,0.1)] rounded-[2.5rem] flex justify-around items-center p-2 pointer-events-auto">
-            {tabs.map((tab) => {
+            {Array.isArray(tabs) && tabs.map((tab) => {
               const isActive = view === tab.id;
               return (
                 <button

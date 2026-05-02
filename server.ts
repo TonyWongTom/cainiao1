@@ -32,9 +32,14 @@ async function startServer() {
     next();
   });
 
-  const serviceAccount = process.env.SERVICE_ACCOUNT_KEY 
-    ? JSON.parse(process.env.SERVICE_ACCOUNT_KEY) 
-    : undefined;
+  let serviceAccount: any = undefined;
+  try {
+    if (process.env.SERVICE_ACCOUNT_KEY) {
+      serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
+    }
+  } catch (parseErr) {
+    console.error('CRITICAL: Failed to parse SERVICE_ACCOUNT_KEY environment variable. Using default credentials if available.', parseErr);
+  }
 
   const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 
                     (serviceAccount && serviceAccount.project_id) || 
@@ -130,8 +135,9 @@ async function startServer() {
         .filter(p => p.id && p.name && !p.isPlaceholder && p.id !== '_init_');
       res.json(players);
     } catch (err: any) {
-      if (isNotFoundError(err)) return res.json([]);
-      res.status(500).json({ error: err.message });
+      console.error('[API Error] /players:', err.message);
+      // Always return an array to prevent frontend crash
+      res.json([]);
     }
   });
 
@@ -167,8 +173,9 @@ async function startServer() {
         .filter(p => p.id && p.name && !p.isPlaceholder && p.id !== '_init_');
       res.json(periods);
     } catch (err: any) {
-      if (isNotFoundError(err)) return res.json([]);
-      res.status(500).json({ error: err.message });
+      console.error('[API Error] /periods:', err.message);
+      // Always return an array to prevent frontend crash
+      res.json([]);
     }
   });
 
