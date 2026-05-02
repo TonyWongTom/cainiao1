@@ -1,17 +1,7 @@
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  setDoc, 
-  updateDoc, 
-  deleteDoc, 
-  onSnapshot, 
-  query, 
-  runTransaction,
-  getDocFromServer
-} from 'firebase/firestore';
-import { db, auth } from '../firebase';
 import { Player, Period } from '../types';
+
+const ACCESS_PASSWORD = 'cainiao';
+const API_BASE = '/api';
 
 export enum OperationType {
   CREATE = 'create',
@@ -22,132 +12,114 @@ export enum OperationType {
   WRITE = 'write',
 }
 
-interface FirestoreErrorInfo {
-  error: string;
-  operationType: OperationType;
-  path: string | null;
-  authInfo: {
-    userId?: string | null;
-    email?: string | null;
-    emailVerified?: boolean | null;
-    isAnonymous?: boolean | null;
-  }
-}
-
-function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-    },
-    operationType,
-    path
+async function apiRequest(path: string, options: RequestInit = {}) {
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-API-Password': ACCESS_PASSWORD,
+    ...(options.headers || {}),
   };
-  console.error('Firestore Error Detailed: ', JSON.stringify(errInfo, null, 2));
-  throw error;
+
+  const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Unknown API error' }));
+    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+  }
+  
+  return response.json();
 }
 
 export const dbService = {
   // Players
   async getPlayers(): Promise<Player[]> {
-    const path = 'players';
-    console.log('正在从集合抓取数据:', path);
     try {
-      const q = query(collection(db, path));
-      const snapshot = await getDocs(q);
-      console.log('数据来源:', snapshot.metadata.fromCache ? '本地缓存' : '服务器云端');
-      console.log('Firestore 返回的原始数据 (getPlayers):', snapshot.docs.map(d => d.data()));
-      return snapshot.docs.map(doc => doc.data() as Player);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.LIST, path);
+      return await apiRequest('/players');
+    } catch (error: any) {
+      console.error('Failed to get players:', error);
       return [];
     }
   },
 
   async savePlayer(player: Player): Promise<boolean> {
-    const path = `players/${player.id}`;
-    const docRef = doc(db, 'players', player.id);
     try {
-      await setDoc(docRef, player);
+      await apiRequest('/players', {
+        method: 'POST',
+        body: JSON.stringify(player),
+      });
       console.log('✅ 云端写入确认成功！');
       return true;
     } catch (e: any) {
       alert('❌ 写入云端失败：' + e.message);
       console.error('详细错误:', e);
-      handleFirestoreError(e, OperationType.WRITE, path);
       return false;
     }
   },
 
   async deletePlayer(playerId: string): Promise<boolean> {
-    const path = `players/${playerId}`;
     try {
-      await deleteDoc(doc(db, 'players', playerId));
+      await apiRequest(`/players/${playerId}`, { method: 'DELETE' });
       return true;
-    } catch (error) {
-      console.error("Firestore DELETE_PLAYER Error:", error);
-      handleFirestoreError(error, OperationType.DELETE, path);
+    } catch (error: any) {
+      console.error('Failed to delete player:', error);
       return false;
     }
   },
 
   // Periods
   async getPeriods(): Promise<Period[]> {
-    const path = 'periods';
     try {
-      const q = query(collection(db, path));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => doc.data() as Period);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.LIST, path);
+      return await apiRequest('/periods');
+    } catch (error: any) {
+      console.error('Failed to get periods:', error);
       return [];
     }
   },
 
   async savePeriod(period: Period): Promise<boolean> {
-    const path = `periods/${period.id}`;
     try {
-      await setDoc(doc(db, 'periods', period.id), period);
+      await apiRequest('/periods', {
+        method: 'POST',
+        body: JSON.stringify(period),
+      });
       return true;
-    } catch (error) {
-      console.error("Firestore SAVE_PERIOD Error:", error);
-      handleFirestoreError(error, OperationType.WRITE, path);
+    } catch (error: any) {
+      console.error('Failed to save period:', error);
       return false;
     }
   },
 
   async deletePeriod(periodId: string): Promise<boolean> {
-    const path = `periods/${periodId}`;
     try {
-      await deleteDoc(doc(db, 'periods', periodId));
+      await apiRequest(`/periods/${periodId}`, { method: 'DELETE' });
       return true;
-    } catch (error) {
-      console.error("Firestore DELETE_PERIOD Error:", error);
-      handleFirestoreError(error, OperationType.DELETE, path);
+    } catch (error: any) {
+      console.error('Failed to delete period:', error);
       return false;
     }
   },
 
-  // Real-time synchronization
+  // Simplified Subscriptions using polling
   subscribeToPlayers(callback: (players: Player[]) => void) {
-    return onSnapshot(collection(db, 'players'), (snapshot) => {
-      const players = snapshot.docs.map(doc => doc.data() as Player);
-      console.log('Firestore 返回的原始数据 (subscribeToPlayers):', players);
+    let active = true;
+    const poll = async () => {
+      if (!active) return;
+      const players = await this.getPlayers();
       callback(players);
-    }, (error) => {
-      alert('云端同步失败: ' + error.message);
-      handleFirestoreError(error, OperationType.GET, 'players');
-    });
+      setTimeout(poll, 10000); // Poll every 10 seconds
+    };
+    poll();
+    return () => { active = false; };
   },
 
   subscribeToPeriods(callback: (periods: Period[]) => void) {
-    const q = query(collection(db, 'periods'));
-    return onSnapshot(q, (snapshot) => {
-      const periods = snapshot.docs.map(doc => doc.data() as Period);
+    let active = true;
+    const poll = async () => {
+      if (!active) return;
+      const periods = await this.getPeriods();
       callback(periods);
-    }, (error) => handleFirestoreError(error, OperationType.GET, 'periods'));
+      setTimeout(poll, 10000); // Poll every 10 seconds
+    };
+    poll();
+    return () => { active = false; };
   }
 };

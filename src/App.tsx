@@ -28,7 +28,6 @@ const App: React.FC = () => {
 
   // Load initial data and subscribe to real-time updates
   useEffect(() => {
-    console.log('Final Sync Project ID:', import.meta.env.VITE_FIREBASE_PROJECT_ID);
     const unsubPlayers = dbService.subscribeToPlayers((syncedPlayers) => {
       setPlayers(syncedPlayers);
       if (syncedPlayers.length === 0) {
@@ -160,8 +159,8 @@ const App: React.FC = () => {
             <p className="font-bold mb-1">可能原因：</p>
             <ul className="list-disc ml-4 space-y-1">
               <li>网络不稳定，请切换网络重试</li>
-              <li>如果您使用了非默认数据库，请确认 <b>VITE_FIREBASE_DATABASE_ID</b> 已正确设置</li>
-              <li>确认 Firebase 控制台已开启 Firestore 读写权限</li>
+              <li>后端服务正在启动中，请稍候</li>
+              <li>服务配置异常，请联系管理员</li>
             </ul>
           </div>
           <button 
