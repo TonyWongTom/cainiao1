@@ -17,6 +17,7 @@ const ACCESS_PASSWORD = 'cainiao';
 
 async function startServer() {
   const app = express();
+  // --- Middleware ---
   app.use(cors());
   app.use(express.json());
 
@@ -50,7 +51,7 @@ async function startServer() {
           credential: serviceAccount ? admin.credential.cert(serviceAccount) : admin.credential.applicationDefault(),
           projectId: projectId,
         });
-        console.log(`Firebase Admin initialized successfully برای ${projectId}`);
+        console.log(`Firebase Admin initialized successfully for ${projectId}`);
       }
     } catch (err) {
       console.error('Failed to initialize Firebase Admin:', err);
@@ -89,49 +90,6 @@ async function startServer() {
            msg.includes('DATABASE_NOT_FOUND');
   };
 
-  // Startup Integrity Check
-  const ensureCollections = async () => {
-    try {
-      console.log('--- Database Integrity Check Started ---');
-      const collections = await db.listCollections();
-      const ids = collections.map(c => c.id);
-      console.log('Current collections in root:', ids.length > 0 ? ids.join(', ') : '(Empty Database)');
-
-      // Standardize collection names to lowercase (user request)
-      const COLLECTIONS_TO_INIT = ['players', 'periods'];
-      
-      for (const collName of COLLECTIONS_TO_INIT) {
-        if (!ids.includes(collName)) {
-          console.log(`Initializing root collection "${collName}" with a placeholder...`);
-          try {
-            await db.collection(collName).doc('_init_').set({ 
-              id: '_init_', 
-              name: collName === 'players' ? '系统管理员' : '初始周期', 
-              points: 0, 
-              isPlaceholder: true,
-              initializedAt: new Date().toISOString() 
-            });
-            console.log(`Successfully initialized "${collName}"`);
-          } catch (initErr: any) {
-            console.warn(`Could not initialize "${collName}":`, initErr.message);
-          }
-        }
-      }
-      console.log('--- Database Integrity Check Finished ---');
-    } catch (err: any) {
-      console.error('Database pre-check error details:', {
-        message: err.message,
-        code: err.code,
-        details: err.details,
-        note: 'If code is 5, check if the "bjhpyh1" project has Firestore enabled under the correct database ID (default).'
-      });
-    }
-  };
-
-  ensureCollections();
-
-  console.log('------------------------------');
-
   // Auth Middleware
   const authMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const password = req.headers['x-api-password'];
@@ -142,8 +100,12 @@ async function startServer() {
     }
   };
 
-  // API Routes
-  app.get('/api/players', async (req, res) => {
+  // --- API Routes (Priority: FIRST) ---
+  console.log('Registering API routes...');
+  
+  const apiRouter = express.Router();
+
+  apiRouter.get('/players', async (req, res) => {
     try {
       console.log('API Fetching players from root collection: "players"');
       const snapshot = await db.collection('players').get();
@@ -169,7 +131,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/players', authMiddleware, async (req, res) => {
+  apiRouter.post('/players', authMiddleware, async (req, res) => {
     try {
       const playerData = req.body;
       console.log('API Saving player to root "players":', playerData.id);
@@ -185,7 +147,7 @@ async function startServer() {
     }
   });
 
-  app.delete('/api/players/:id', authMiddleware, async (req, res) => {
+  apiRouter.delete('/players/:id', authMiddleware, async (req, res) => {
     try {
       await db.collection('players').doc(req.params.id).delete();
       res.json({ success: true });
@@ -195,7 +157,7 @@ async function startServer() {
     }
   });
 
-  app.get('/api/periods', async (req, res) => {
+  apiRouter.get('/periods', async (req, res) => {
     try {
       console.log('API Fetching periods from root collection: "periods"');
       const snapshot = await db.collection('periods').get();
@@ -221,7 +183,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/periods', authMiddleware, async (req, res) => {
+  apiRouter.post('/periods', authMiddleware, async (req, res) => {
     try {
       const periodData = req.body;
       console.log('API Saving period to root "periods":', periodData.id);
@@ -237,7 +199,7 @@ async function startServer() {
     }
   });
 
-  app.delete('/api/periods/:id', authMiddleware, async (req, res) => {
+  apiRouter.delete('/periods/:id', authMiddleware, async (req, res) => {
     try {
       await db.collection('periods').doc(req.params.id).delete();
       res.json({ success: true });
@@ -247,12 +209,15 @@ async function startServer() {
     }
   });
 
-  // Catch-all for API routes that are NOT handled above to prevent falling through to SPA HTML
-  app.all('/api/*', (req, res) => {
-    res.status(404).json({ error: `API Route ${req.method} ${req.url} not found` });
+  // API Router catch-all (Must return JSON)
+  apiRouter.all('*', (req, res) => {
+    res.status(404).json({ error: `API endpoint ${req.method} ${req.url} not found` });
   });
 
-  // Vite middleware for development
+  // Mount API router
+  app.use('/api', apiRouter);
+
+  // --- Static & Vite (Priority: LAST) ---
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
