@@ -69,7 +69,7 @@ const PlayersList: React.FC<PlayersListProps> = ({ players, setPlayers, periods 
   };
 
   const isCurrentlyFunder = (playerId: string) => {
-    return latestPeriod?.funderIds.includes(playerId) || false;
+    return latestPeriod?.funderIds?.includes(playerId) || false;
   };
 
   // --- CSV 功能模块 ---

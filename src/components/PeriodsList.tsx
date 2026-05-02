@@ -248,7 +248,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
     if (attendee) return attendee.fee;
 
     const currentPeriod = periods.find(p => p.id === periodId);
-    const isFunder = currentPeriod?.funderIds.includes(player.id);
+    const isFunder = currentPeriod?.funderIds?.includes(player.id);
     const periodConfig = currentPeriod?.playerConfigs?.find(c => c.playerId === player.id);
     const periodType = periodConfig?.type || PlayerType.PER_SESSION;
     const periodFee = periodConfig?.fee ?? DEFAULT_SESSION_FEE;
