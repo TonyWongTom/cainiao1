@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -12,11 +12,6 @@ const firebaseConfig = {
 };
 
 const databaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID || '(default)';
-
-// Check for missing required config
-const missingKeys = Object.entries(firebaseConfig)
-  .filter(([key, value]) => !value && key !== 'databaseId')
-  .map(([key]) => key);
 
 const app = initializeApp(firebaseConfig);
 
