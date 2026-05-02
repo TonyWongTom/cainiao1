@@ -44,9 +44,24 @@ async function startServer() {
                     process.env.FIREBASE_PROJECT_ID || 
                     'bjhpyh1';
 
-  const databaseId = (process.env.VITE_FIREBASE_DATABASE_ID && process.env.VITE_FIREBASE_DATABASE_ID !== '(default)') 
-    ? process.env.VITE_FIREBASE_DATABASE_ID 
-    : '(default)';
+  let databaseId = '(default)';
+  let firebaseConfig: any = null;
+  try {
+    const fs = await import('fs');
+    if (fs.existsSync(path.join(__dirname, 'firebase-applet-config.json'))) {
+      firebaseConfig = JSON.parse(fs.readFileSync(path.join(__dirname, 'firebase-applet-config.json'), 'utf8'));
+      if (firebaseConfig.firestoreDatabaseId) {
+        databaseId = firebaseConfig.firestoreDatabaseId;
+      }
+    }
+  } catch (err) {
+    console.error('Failed to read firebase config:', err);
+  }
+
+  // Override from env if present
+  if (process.env.VITE_FIREBASE_DATABASE_ID && process.env.VITE_FIREBASE_DATABASE_ID !== '(default)') {
+    databaseId = process.env.VITE_FIREBASE_DATABASE_ID;
+  }
 
   if (projectId) {
     try {
@@ -137,9 +152,18 @@ async function startServer() {
     }
   });
 
-  apiRouter.get('/health', (req, res) => res.json({ status: 'ok' }));
+  apiRouter.get('/health', (req, res) => {
+    res.json({
+      status: 'ok',
+      dbId: databaseId,
+      projectId: projectId,
+      hasServiceAccount: !!serviceAccount,
+      envDbId: process.env.VITE_FIREBASE_DATABASE_ID,
+      envProjectId: process.env.VITE_FIREBASE_PROJECT_ID
+    });
+  });
 
-  apiRouter.all('*', (req, res) => {
+  apiRouter.all('*all', (req, res) => {
     res.status(404).json({ error: `API endpoint not found` });
   });
 
@@ -157,7 +181,7 @@ async function startServer() {
   } else {
     const distPath = path.join(__dirname, 'dist');
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
+    app.get('*all', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
