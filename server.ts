@@ -18,27 +18,25 @@ const ACCESS_PASSWORD = 'cainiao';
 async function startServer() {
   const app = express();
   
-  // --- Middleware (Critical Order: TOP) ---
-  app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'X-API-Password', 'Authorization']
-  }));
+  // --- 1. Middleware (Absolute TOP Priority) ---
+  app.use(cors());
   app.use(express.json());
 
-  // Logging Middleware
+  // Request Logging
   app.use((req, res, next) => {
-    console.log(`[Incoming] ${req.method} ${req.url}`);
+    console.log(`[HTTP] ${req.method} ${req.url}`);
     next();
   });
 
+  // --- 2. Environment & Firebase Setup ---
   let serviceAccount: any = undefined;
   try {
     if (process.env.SERVICE_ACCOUNT_KEY) {
-      serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
+      const key = process.env.SERVICE_ACCOUNT_KEY.trim();
+      serviceAccount = JSON.parse(key);
     }
-  } catch (parseErr) {
-    console.error('CRITICAL: Failed to parse SERVICE_ACCOUNT_KEY environment variable. Using default credentials if available.', parseErr);
+  } catch (err: any) {
+    console.error('Firebase Auth Guard: Failed to parse SERVICE_ACCOUNT_KEY. Details:', err.message);
   }
 
   const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 
@@ -46,19 +44,9 @@ async function startServer() {
                     process.env.FIREBASE_PROJECT_ID || 
                     'bjhpyh1';
 
-  // Explicitly default to '(default)' for initialization as requested
   const databaseId = (process.env.VITE_FIREBASE_DATABASE_ID && process.env.VITE_FIREBASE_DATABASE_ID !== '(default)') 
     ? process.env.VITE_FIREBASE_DATABASE_ID 
     : '(default)';
-
-  console.log('--- Firebase Admin Diagnostic Startup ---');
-  console.log('Backend connected to project (Target):', projectId);
-  console.log('Backend connected to database (Target):', databaseId);
-  console.log('Value of process.env.PROJECT_ID:', process.env.PROJECT_ID || 'undefined (using bjhpyh1)');
-  console.log('Service Account present:', !!serviceAccount);
-  if (serviceAccount) {
-    console.log('Service Account Project ID:', serviceAccount.project_id);
-  }
 
   if (projectId) {
     try {
@@ -67,86 +55,45 @@ async function startServer() {
           credential: serviceAccount ? admin.credential.cert(serviceAccount) : admin.credential.applicationDefault(),
           projectId: projectId,
         });
-        console.log(`Firebase Admin initialized successfully for ${projectId}`);
       }
-    } catch (err) {
-      console.error('Failed to initialize Firebase Admin:', err);
+    } catch (err: any) {
+      console.error('Firebase Init Error:', err.message);
     }
   }
 
-  // Use the specified database ID if provided
   let db: admin.firestore.Firestore;
   try {
-    const app = admin.app();
-    // Explicitly pass databaseId as requested by user
-    db = getFirestore(app, databaseId);
-    
-    console.log(`Firestore instance attached. Project: ${app.options.projectId}, Database: ${databaseId}`);
+    db = getFirestore(admin.app(), databaseId);
   } catch (err) {
-    console.error('Failed to initialize Firestore instance:', err);
-    try {
-      db = getFirestore(admin.app(), '(default)');
-    } catch (fallbackErr) {
-      db = getFirestore();
-    }
+    db = getFirestore();
   }
-  
-  // Helper to detect 5 NOT_FOUND
-  const isNotFoundError = (err: any) => {
-    if (!err) return false;
-    const code = err.code || err.status;
-    const msg = String(err.message || '').toUpperCase();
-    const details = String(err.details || '').toUpperCase();
-    
-    return code === 5 || 
-           code === '5' ||
-           msg.includes('NOT_FOUND') || 
-           msg.includes('NOT FOUND') ||
-           details.includes('NOT_FOUND') ||
-           msg.includes('DATABASE_NOT_FOUND');
-  };
 
-  // --- API Routes Definition (Strict Isolation) ---
+  // --- 3. API ROUTER (High Priority) ---
   const apiRouter = express.Router();
-  
-  // Auth Middleware
+
+  // Auth Helper
   const authMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const password = req.headers['x-api-password'];
-    if (password === ACCESS_PASSWORD) {
-      next();
-    } else {
-      console.warn('[API Auth] Unauthorized access attempt');
-      res.status(401).json({ error: 'Unauthorized: Invalid password' });
-    }
+    if (req.headers['x-api-password'] === ACCESS_PASSWORD) return next();
+    res.status(401).json({ error: 'Unauthorized' });
   };
 
-  console.log('Registering API routes on /api prefix...');
-
-  // Diagnostic endpoint
-  apiRouter.get('/health', (req, res) => res.json({ status: 'ok' }));
-
-  // Players Management
+  // Players
   apiRouter.get('/players', async (req, res) => {
     try {
-      if (!db) throw new Error('Firestore not initialized');
       const snapshot = await db.collection('players').get();
       const players = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() } as any))
-        .filter(p => p.id && p.name && !p.isPlaceholder && p.id !== '_init_');
+        .filter(p => p.id && p.name && !p.isPlaceholder);
       res.json(players);
-    } catch (err: any) {
-      console.error('[API Error] /players:', err.message);
-      // Always return an array to prevent frontend crash
+    } catch (err) {
       res.json([]);
     }
   });
 
   apiRouter.post('/players', authMiddleware, async (req, res) => {
     try {
-      const playerData = req.body;
-      if (!playerData || !playerData.id) return res.status(400).json({ error: 'Player ID required' });
-      if (!db) throw new Error('Firestore not initialized');
-      await db.collection('players').doc(playerData.id).set(playerData, { merge: true });
+      if (!req.body || !req.body.id) throw new Error('Missing ID');
+      await db.collection('players').doc(req.body.id).set(req.body, { merge: true });
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -155,7 +102,6 @@ async function startServer() {
 
   apiRouter.delete('/players/:id', authMiddleware, async (req, res) => {
     try {
-      if (!db) throw new Error('Firestore not initialized');
       await db.collection('players').doc(req.params.id).delete();
       res.json({ success: true });
     } catch (err: any) {
@@ -163,28 +109,23 @@ async function startServer() {
     }
   });
 
-  // Periods Management
+  // Periods
   apiRouter.get('/periods', async (req, res) => {
     try {
-      if (!db) throw new Error('Firestore not initialized');
       const snapshot = await db.collection('periods').get();
       const periods = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() } as any))
-        .filter(p => p.id && p.name && !p.isPlaceholder && p.id !== '_init_');
+        .filter(p => p.id && p.name && !p.isPlaceholder);
       res.json(periods);
-    } catch (err: any) {
-      console.error('[API Error] /periods:', err.message);
-      // Always return an array to prevent frontend crash
+    } catch (err) {
       res.json([]);
     }
   });
 
   apiRouter.post('/periods', authMiddleware, async (req, res) => {
     try {
-      const periodData = req.body;
-      if (!periodData || !periodData.id) return res.status(400).json({ error: 'Period ID required' });
-      if (!db) throw new Error('Firestore not initialized');
-      await db.collection('periods').doc(periodData.id).set(periodData, { merge: true });
+      if (!req.body || !req.body.id) throw new Error('Missing ID');
+      await db.collection('periods').doc(req.body.id).set(req.body, { merge: true });
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -193,7 +134,6 @@ async function startServer() {
 
   apiRouter.delete('/periods/:id', authMiddleware, async (req, res) => {
     try {
-      if (!db) throw new Error('Firestore not initialized');
       await db.collection('periods').doc(req.params.id).delete();
       res.json({ success: true });
     } catch (err: any) {
@@ -201,21 +141,15 @@ async function startServer() {
     }
   });
 
-  // Strict API 404 Handler
+  // API Catch-all
   apiRouter.all('*', (req, res) => {
     res.status(404).json({ error: `API endpoint ${req.method} ${req.url} not found` });
   });
 
-  // --- 1. API ROUTES (ABSOLUTE PRIORITY) ---
-  console.log('Registering API routes on /api prefix (Strict Priority)...');
+  // Mount API Router BEFORE Static Fallback
   app.use('/api', apiRouter);
 
-  // Catch-all for /api prefix to ensure JSON response for missing endpoints
-  app.use('/api/*', (req, res) => {
-    res.status(404).json({ error: `API route ${req.originalUrl} not found` });
-  });
-
-  // --- 2. STATIC FILES & SPA (FALLBACK) ---
+  // --- 4. Static Files & SPA Fallback (Last Priority) ---
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -224,7 +158,6 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(__dirname, 'dist');
-    console.log('Serving static files from:', distPath);
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));

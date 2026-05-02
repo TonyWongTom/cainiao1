@@ -13,8 +13,9 @@ export enum OperationType {
 }
 
 async function apiRequest(path: string, options: RequestInit = {}) {
-  const url = `${API_BASE}${path}`;
-  console.log(`[dbService] Requesting: ${options.method || 'GET'} ${url}`);
+  // Ensure path doesn't have double slashes
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const url = `${API_BASE}${cleanPath}`;
   
   const headers = {
     'Content-Type': 'application/json',
@@ -25,19 +26,34 @@ async function apiRequest(path: string, options: RequestInit = {}) {
   try {
     const response = await fetch(url, { ...options, headers });
     
+    // READ TEXT ONCE - Safety first
+    const responseText = await response.text();
+    
     if (!response.ok) {
-      const errorText = await response.text(); // Read exactly once
-      console.error('真正的后端报错是:', errorText);
-      throw new Error(errorText);
+      console.error(`[API Error] ${response.status} for ${url}:`, responseText);
+      // Attempt to find error message in JSON if possible
+      try {
+        const errJson = JSON.parse(responseText);
+        throw new Error(errJson.error || responseText);
+      } catch {
+        throw new Error(responseText || `HTTP ${response.status}`);
+      }
     }
     
+    // Check if we should expect JSON
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
-      return await response.json();
+      try {
+        return JSON.parse(responseText);
+      } catch (e) {
+        console.warn('[API] Expected JSON but failed to parse:', responseText);
+        return { success: true };
+      }
     }
+    
     return { success: true };
   } catch (err: any) {
-    console.error(`[dbService] API Request Failed: ${url}`, err);
+    console.error(`[dbService] Request Failed: ${url}`, err.message);
     throw err;
   }
 }
