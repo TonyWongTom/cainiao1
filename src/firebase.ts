@@ -18,6 +18,7 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firestore with forced long polling and disabled streams for maximum reliability
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
+  experimentalAutoDetectLongPolling: false,
   useFetchStreams: false,
   ignoreUndefinedProperties: true
 } as any, databaseId);
