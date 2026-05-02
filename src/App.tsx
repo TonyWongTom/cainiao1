@@ -1,4 +1,5 @@
 
+// Build trigger: Updated Firebase configuration keys
 import React, { useState, useEffect, useMemo } from 'react';
 import { Player, Period, View } from './types';
 import { INITIAL_FUNDERS, Icons } from './constants';
