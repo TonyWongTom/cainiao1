@@ -12,9 +12,9 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ players, periods, activePeriod, onPeriodChange }) => {
   // Total fees collected
-  const grossFees = activePeriod?.sessions.reduce((acc, s) => acc + s.attendees.reduce((sum, a) => sum + a.fee, 0), 0) || 0;
+  const grossFees = (activePeriod?.sessions || []).reduce((acc, s) => acc + (s.attendees || []).reduce((sum, a) => sum + a.fee, 0), 0) || 0;
   // Total extra session costs
-  const sessionCosts = activePeriod?.sessions.reduce((acc, s) => acc + (s.sessionCost || 0), 0) || 0;
+  const sessionCosts = (activePeriod?.sessions || []).reduce((acc, s) => acc + (s.sessionCost || 0), 0) || 0;
   
   // Total income is net (Gross Fees - Session Costs)
   const totalIncome = grossFees - sessionCosts;

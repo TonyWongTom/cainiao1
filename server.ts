@@ -12,7 +12,7 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = 3000;
+const PORT = process.env.PORT || 8080;
 const ACCESS_PASSWORD = 'cainiao';
 
 async function startServer() {
@@ -187,7 +187,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[READY] Server running on port ${PORT}`);
+    console.log(`[READY] Server listening on port ${PORT}`);
   });
 }
 

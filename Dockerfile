@@ -27,13 +27,14 @@ ENV VITE_APP_PASSWORD=$VITE_APP_PASSWORD
 
 RUN npm run build
 
-FROM nginx:stable-alpine
-# Install Node.js for the API backend
-RUN apk add --no-cache nodejs npm
+FROM node:20-alpine
 WORKDIR /app
-COPY --from=build /app .
-# Use the custom nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/firebase-applet-config.json ./firebase-applet-config.json
+COPY --from=build /app/package*.json ./
+COPY --from=build /app/server.ts ./
+COPY --from=build /app/tsconfig.json ./
+COPY --from=build /app/node_modules ./node_modules
+
 EXPOSE 8080
-# Start both Node server (port 3000) and Nginx proxy (port 8080)
-CMD ["sh", "-c", "npm run start & nginx -g 'daemon off;'"]
+CMD ["npm", "run", "start"]

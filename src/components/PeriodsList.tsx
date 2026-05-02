@@ -87,8 +87,8 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
     const BOM = "\ufeff";
     
     // Calculate stats
-    const grossIncome = period.sessions.reduce((acc, s) => acc + s.attendees.reduce((sum, a) => sum + a.fee, 0), 0);
-    const sessionCosts = period.sessions.reduce((acc, s) => acc + (s.sessionCost || 0), 0);
+    const grossIncome = (period.sessions || []).reduce((acc, s) => acc + (s.attendees || []).reduce((sum, a) => sum + (a.fee || 0), 0), 0);
+    const sessionCosts = (period.sessions || []).reduce((acc, s) => acc + (s.sessionCost || 0), 0);
     const netTotalIncome = grossIncome - sessionCosts;
     const totalExpenses = period.courtCost;
     const surplus = netTotalIncome - totalExpenses;
@@ -128,14 +128,14 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
     csv += `打球流水明细\n`;
     csv += `日期,星期,额外费用,参与人员,实付金额\n`;
 
-    const sortedSessions = [...period.sessions].sort((a, b) => a.date.localeCompare(b.date));
+    const sortedSessions = [...(period.sessions || [])].sort((a, b) => a.date.localeCompare(b.date));
 
     sortedSessions.forEach(session => {
       const weekday = getWeekday(session.date);
       const sessionExtraCost = session.sessionCost || 0;
-      const totalSessionPaid = session.attendees.reduce((acc, a) => acc + a.fee, 0);
+      const totalSessionPaid = (session.attendees || []).reduce((acc, a) => acc + (a.fee || 0), 0);
 
-      const participantDetails = session.attendees.map(a => {
+      const participantDetails = (session.attendees || []).map(a => {
         const playerName = players.find(p => p.id === a.playerId)?.name || '未知';
         return `${playerName}(¥${a.fee})`;
       }).join("; ");
@@ -441,7 +441,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
   );
 
   const renderSessionForm = (periodId: string) => {
-    const currentSubtotal = selectedAttendees.reduce((sum, a) => sum + a.fee, 0);
+    const currentSubtotal = (selectedAttendees || []).reduce((sum, a) => sum + (a.fee || 0), 0);
 
     return (
       <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 animate-fade-in bg-black/60 backdrop-blur-sm" onClick={() => { setActiveSessionPeriod(null); setEditingSessionId(null); }}>
@@ -537,7 +537,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
       <div className="space-y-4">
         {Array.isArray(sortedPeriods) && sortedPeriods.map(period => {
           const isExpanded = expandedPeriodId === period.id;
-          const totalIncome = period.sessions.reduce((acc, s) => acc + s.attendees.reduce((sum, a) => sum + a.fee, 0) - (s.sessionCost || 0), 0);
+          const totalIncome = (period.sessions || []).reduce((acc, s) => acc + (s.attendees || []).reduce((sum, a) => sum + (a.fee || 0), 0) - (s.sessionCost || 0), 0);
           return (
             <div key={period.id} className={`bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden transition-all ${isExpanded ? 'ring-2 ring-emerald-500/10 shadow-lg' : ''}`}>
               <div onClick={() => setExpandedPeriodId(isExpanded ? null : period.id)} className={`p-5 flex justify-between items-center cursor-pointer active:bg-gray-50 transition-colors ${isExpanded ? 'bg-emerald-50/20' : ''}`}>
@@ -581,7 +581,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-white p-4 rounded-2xl border border-gray-100">
                       <p className="text-[9px] font-black text-gray-400 uppercase mb-1">本期内额外总支</p>
-                      <p className="text-lg font-black text-red-500">¥{period.sessions.reduce((a,s) => a+(s.sessionCost||0), 0).toFixed(2)}</p>
+                      <p className="text-lg font-black text-red-500">¥{(period.sessions || []).reduce((a,s) => a+(s.sessionCost||0), 0).toFixed(2)}</p>
                     </div>
                     <div className="bg-white p-4 rounded-2xl border border-gray-100">
                       <p className="text-[9px] font-black text-gray-400 uppercase mb-1">本期实收总额</p>
@@ -625,13 +625,13 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
                              <div className="flex flex-col">
                                 <span className="text-xs font-black text-gray-800">{formatDateChinese(session.date)}</span>
                                 <div className="flex items-center gap-2 mt-1">
-                                  <span className="text-[9px] text-gray-500 font-bold">实收: ¥{session.attendees.reduce((sum, a) => sum + a.fee, 0)}</span>
+                                  <span className="text-[9px] text-gray-500 font-bold">实收: ¥{(session.attendees || []).reduce((sum, a) => sum + (a.fee || 0), 0)}</span>
                                   {session.sessionCost ? <span className="text-[9px] text-red-500 font-bold">支出: -¥{session.sessionCost}</span> : null}
-                                  <span className="text-[9px] text-emerald-600 font-black">当次入: ¥{(session.attendees.reduce((sum, a) => sum + a.fee, 0) - (session.sessionCost || 0)).toFixed(2)}</span>
+                                  <span className="text-[9px] text-emerald-600 font-black">当次入: ¥{((session.attendees || []).reduce((sum, a) => sum + (a.fee || 0), 0) - (session.sessionCost || 0)).toFixed(2)}</span>
                                 </div>
                              </div>
                              <div className="flex gap-1 items-center">
-                                <button onClick={(e) => { e.stopPropagation(); setActiveSessionPeriod(period.id); setEditingSessionId(session.id); setSessionFormDate(session.date); setSessionFormCost(session.sessionCost || 0); setSelectedAttendees(session.attendees); }} className="text-gray-300 p-1.5 active:text-emerald-500 transition-colors"><Icons.Pencil /></button>
+                                <button onClick={(e) => { e.stopPropagation(); setActiveSessionPeriod(period.id); setEditingSessionId(session.id); setSessionFormDate(session.date); setSessionFormCost(session.sessionCost || 0); setSelectedAttendees(session.attendees || []); }} className="text-gray-300 p-1.5 active:text-emerald-500 transition-colors"><Icons.Pencil /></button>
                                 
                                 <button 
                                   onClick={(e) => handleRemoveSession(e, period.id, session.id)} 
