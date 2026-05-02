@@ -28,8 +28,12 @@ ENV VITE_APP_PASSWORD=$VITE_APP_PASSWORD
 RUN npm run build
 
 FROM nginx:stable-alpine
-COPY --from=build /app/dist /usr/share/nginx/html
+# Install Node.js for the API backend
+RUN apk add --no-cache nodejs npm
+WORKDIR /app
+COPY --from=build /app .
 # Use the custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 8080
-CMD ["nginx", "-g", "daemon off;"]
+# Start both Node server (port 3000) and Nginx proxy (port 8080)
+CMD ["sh", "-c", "npm run start & nginx -g 'daemon off;'"]

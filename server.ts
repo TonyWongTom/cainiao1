@@ -18,7 +18,7 @@ const ACCESS_PASSWORD = 'cainiao';
 async function startServer() {
   const app = express();
   
-  // --- 1. MIDDLEWARE (ABSOLUTE TOP) ---
+  // --- 1. MIDDLEWARE (ABSOLUTE TOP PRIORITY) ---
   app.use(cors());
   app.use(express.json());
 
@@ -36,7 +36,7 @@ async function startServer() {
       serviceAccount = JSON.parse(key);
     }
   } catch (err: any) {
-    console.error('Firebase Auth Guard: Failed to parse SERVICE_ACCOUNT_KEY. Details:', err.message);
+    console.error('Firebase Init: Failed to parse SERVICE_ACCOUNT_KEY.', err.message);
   }
 
   const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 
@@ -66,11 +66,11 @@ async function startServer() {
     const firestoreApp = admin.app();
     db = getFirestore(firestoreApp, databaseId);
   } catch (err) {
-    console.error('Firestore init failed, falling back to default:', err);
+    console.warn('Firestore init fallback to default:', err);
     db = getFirestore();
   }
 
-  // --- 3. API ROUTER (PHYSICAL ISOLATION) ---
+  // --- 3. API ROUTER DEFINITION (PHYSICAL ISOLATION) ---
   const apiRouter = express.Router();
 
   // Auth Helper
@@ -83,23 +83,18 @@ async function startServer() {
   apiRouter.get('/players', async (req, res) => {
     try {
       const snapshot = await db.collection('players').get();
-      const players = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() } as any))
-        .filter(p => p.id && p.name && !p.isPlaceholder);
-      res.json(players);
+      res.json(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     } catch (err) {
-      console.error('GET /players failed:', err);
       res.json([]);
     }
   });
 
   apiRouter.post('/players', authMiddleware, async (req, res) => {
     try {
-      if (!req.body || !req.body.id) return res.status(400).json({ error: 'Missing Player ID' });
+      if (!req.body || !req.body.id) throw new Error('Missing ID');
       await db.collection('players').doc(req.body.id).set(req.body, { merge: true });
       res.json({ success: true });
     } catch (err: any) {
-      console.error('POST /players failed:', err);
       res.status(500).json({ error: err.message });
     }
   });
@@ -117,23 +112,18 @@ async function startServer() {
   apiRouter.get('/periods', async (req, res) => {
     try {
       const snapshot = await db.collection('periods').get();
-      const periods = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() } as any))
-        .filter(p => p.id && p.name && !p.isPlaceholder);
-      res.json(periods);
+      res.json(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     } catch (err) {
-      console.error('GET /periods failed:', err);
       res.json([]);
     }
   });
 
   apiRouter.post('/periods', authMiddleware, async (req, res) => {
     try {
-      if (!req.body || !req.body.id) return res.status(400).json({ error: 'Missing Period ID' });
+      if (!req.body || !req.body.id) throw new Error('Missing ID');
       await db.collection('periods').doc(req.body.id).set(req.body, { merge: true });
       res.json({ success: true });
     } catch (err: any) {
-      console.error('POST /periods failed:', err);
       res.status(500).json({ error: err.message });
     }
   });
@@ -147,15 +137,13 @@ async function startServer() {
     }
   });
 
-  // Health check
   apiRouter.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-  // API Catch-all (Force JSON)
   apiRouter.all('*', (req, res) => {
-    res.status(404).json({ error: `API endpoint ${req.method} ${req.url} not found` });
+    res.status(404).json({ error: `API endpoint not found` });
   });
 
-  // --- 4. MOUNT API (PRIORITY #1) ---
+  // --- 4. MOUNT API (ABSOLUTE PRIORITY) ---
   app.use('/api', apiRouter);
 
   // --- 5. STATIC FILES & SPA (FALLBACK) ---
@@ -175,8 +163,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[READY] App Running on port ${PORT}`);
-    console.log(`[INFO] DB: ${databaseId}, Project: ${projectId}`);
+    console.log(`[READY] Server running on port ${PORT}`);
   });
 }
 
