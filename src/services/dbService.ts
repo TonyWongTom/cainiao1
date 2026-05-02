@@ -13,20 +13,38 @@ export enum OperationType {
 }
 
 async function apiRequest(path: string, options: RequestInit = {}) {
+  const url = `${API_BASE}${path}`;
+  console.log(`[dbService] Requesting: ${options.method || 'GET'} ${url}`);
+  
   const headers = {
     'Content-Type': 'application/json',
     'X-API-Password': ACCESS_PASSWORD,
     ...(options.headers || {}),
   };
 
-  const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
-  
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Unknown API error' }));
-    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+  try {
+    const response = await fetch(url, { ...options, headers });
+    
+    if (!response.ok) {
+      let errorMsg = `HTTP error! status: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMsg = errorData.error || errorMsg;
+      } catch (e) {
+        // If it's not JSON, it might be HTML (SPA fallback)
+        const text = await response.text();
+        if (text.includes('<!DOCTYPE html>')) {
+          errorMsg = `API returned HTML instead of JSON. Check backend route order and URL alignment.`;
+        }
+      }
+      throw new Error(errorMsg);
+    }
+    
+    return response.json();
+  } catch (err: any) {
+    console.error(`[dbService] API Request Failed: ${url}`, err);
+    throw err;
   }
-  
-  return response.json();
 }
 
 export const dbService = {

@@ -21,6 +21,12 @@ async function startServer() {
   app.use(cors());
   app.use(express.json());
 
+  // Logging Middleware (Requested by user)
+  app.use((req, res, next) => {
+    console.log(`[Request] ${req.method} ${req.url}`);
+    next();
+  });
+
   const serviceAccount = process.env.SERVICE_ACCOUNT_KEY 
     ? JSON.parse(process.env.SERVICE_ACCOUNT_KEY) 
     : undefined;
@@ -100,122 +106,143 @@ async function startServer() {
     }
   };
 
-  // --- API Routes (Priority: FIRST) ---
-  console.log('Registering API routes...');
-  
+  // --- API Routes Definition (Strict Isolation) ---
   const apiRouter = express.Router();
+  console.log('Registering API routes on /api prefix...');
 
+  // Diagnostic endpoint
+  apiRouter.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
+
+  // Players Management
   apiRouter.get('/players', async (req, res) => {
     try {
-      console.log('API Fetching players from root collection: "players"');
-      const snapshot = await db.collection('players').get();
+      console.log('[API] GET /players - Fetching from Firestore...');
+      if (!db) throw new Error('Firestore not initialized');
       
-      if (snapshot.empty) {
-        console.log('API "players" collection is empty, returning []');
-        return res.json([]);
-      }
-
+      const snapshot = await db.collection('players').get();
       const players = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() } as any))
         .filter(p => p.id && p.name && !p.isPlaceholder && p.id !== '_init_');
       
-      console.log(`API Found ${players.length} valid players (out of ${snapshot.docs.length} documents)`);
+      console.log(`[API] GET /players - Success, found ${players.length} valid players`);
       res.json(players);
     } catch (err: any) {
-      console.error('API Error (GET /players):', err.message);
+      console.error('[API] Error GET /players:', err.message);
       if (isNotFoundError(err)) {
-        console.warn('NOT_FOUND (5) detected for "players" collection. Returning empty list.');
+        console.warn('[API] players collection not found, returning empty array');
         return res.json([]);
       }
-      res.status(500).json({ error: err.message, code: err.code, details: err.details });
+      res.status(500).json({ error: err.message, type: 'firestore_error' });
     }
   });
 
   apiRouter.post('/players', authMiddleware, async (req, res) => {
     try {
       const playerData = req.body;
-      console.log('API Saving player to root "players":', playerData.id);
+      console.log('[API] POST /players - Saving player:', playerData?.id);
       if (!playerData || !playerData.id) {
         return res.status(400).json({ error: 'Player data with ID is required' });
       }
-      await db.collection('players').doc(playerData.id).set(playerData);
-      console.log('API Player saved successfully');
+      if (!db) throw new Error('Firestore not initialized');
+
+      await db.collection('players').doc(playerData.id).set({
+        ...playerData,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      
+      console.log('[API] POST /players - Successfully saved player');
       res.json({ success: true });
     } catch (err: any) {
-      console.error('API Error (POST /players):', err);
-      res.status(500).json({ error: err.message, code: err.code, details: err.details });
+      console.error('[API] Error POST /players:', err.message);
+      res.status(500).json({ error: err.message });
     }
   });
 
   apiRouter.delete('/players/:id', authMiddleware, async (req, res) => {
     try {
+      console.log('[API] DELETE /players - ID:', req.params.id);
+      if (!db) throw new Error('Firestore not initialized');
       await db.collection('players').doc(req.params.id).delete();
       res.json({ success: true });
     } catch (err: any) {
-      console.error('API Error (DELETE /players):', err);
-      res.status(500).json({ error: err.message, code: err.code, details: err.details });
+      console.error('[API] Error DELETE /players:', err.message);
+      res.status(500).json({ error: err.message });
     }
   });
 
+  // Periods Management
   apiRouter.get('/periods', async (req, res) => {
     try {
-      console.log('API Fetching periods from root collection: "periods"');
-      const snapshot = await db.collection('periods').get();
+      console.log('[API] GET /periods - Fetching from Firestore...');
+      if (!db) throw new Error('Firestore not initialized');
       
-      if (snapshot.empty) {
-        console.log('API "periods" collection is empty, returning []');
-        return res.json([]);
-      }
-
+      const snapshot = await db.collection('periods').get();
       const periods = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() } as any))
         .filter(p => p.id && p.name && !p.isPlaceholder && p.id !== '_init_');
         
-      console.log(`API Found ${periods.length} valid periods (out of ${snapshot.docs.length} documents)`);
+      console.log(`[API] GET /periods - Success, found ${periods.length} valid periods`);
       res.json(periods);
     } catch (err: any) {
-      console.error('API Error (GET /periods):', err.message);
+      console.error('[API] Error GET /periods:', err.message);
       if (isNotFoundError(err)) {
-        console.warn('NOT_FOUND (5) detected for "periods" collection. Returning empty list.');
+        console.warn('[API] periods collection not found, returning empty array');
         return res.json([]);
       }
-      res.status(500).json({ error: err.message, code: err.code, details: err.details });
+      res.status(500).json({ error: err.message });
     }
   });
 
   apiRouter.post('/periods', authMiddleware, async (req, res) => {
     try {
       const periodData = req.body;
-      console.log('API Saving period to root "periods":', periodData.id);
+      console.log('[API] POST /periods - Saving period:', periodData?.id);
       if (!periodData || !periodData.id) {
         return res.status(400).json({ error: 'Period data with ID is required' });
       }
-      await db.collection('periods').doc(periodData.id).set(periodData);
-      console.log('API Period saved successfully');
+      if (!db) throw new Error('Firestore not initialized');
+
+      await db.collection('periods').doc(periodData.id).set({
+        ...periodData,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      
+      console.log('[API] POST /periods - Successfully saved period');
       res.json({ success: true });
     } catch (err: any) {
-      console.error('API Error (POST /periods):', err);
-      res.status(500).json({ error: err.message, code: err.code, details: err.details });
+      console.error('[API] Error POST /periods:', err.message);
+      res.status(500).json({ error: err.message });
     }
   });
 
   apiRouter.delete('/periods/:id', authMiddleware, async (req, res) => {
     try {
+      console.log('[API] DELETE /periods - ID:', req.params.id);
+      if (!db) throw new Error('Firestore not initialized');
       await db.collection('periods').doc(req.params.id).delete();
       res.json({ success: true });
     } catch (err: any) {
-      console.error('API Error (DELETE /periods):', err);
-      res.status(500).json({ error: err.message, code: err.code, details: err.details });
+      console.error('[API] Error DELETE /periods:', err.message);
+      res.status(500).json({ error: err.message });
     }
   });
 
-  // API Router catch-all (Must return JSON)
+  // Strict API 404 Handler (Returns JSON instead of HTML)
   apiRouter.all('*', (req, res) => {
-    res.status(404).json({ error: `API endpoint ${req.method} ${req.url} not found` });
+    console.warn(`[API Router 404] No handler matched ${req.method} ${req.url}`);
+    res.status(404).json({ 
+      error: `API endpoint ${req.method} ${req.url} not found`,
+      availableEndpoints: ['/players', '/periods', '/health']
+    });
   });
 
-  // Mount API router
+  // --- MOUNTING (Priority: API first) ---
   app.use('/api', apiRouter);
+
+  // Fallback for any /api prefixed request that slipped past the router
+  app.all('/api/*', (req, res) => {
+    res.status(404).json({ error: `API route reached fallback: ${req.method} ${req.originalUrl}` });
+  });
 
   // --- Static & Vite (Priority: LAST) ---
   if (process.env.NODE_ENV !== 'production') {
