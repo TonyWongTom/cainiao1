@@ -27,7 +27,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
   const [sortBy, setSortBy] = useState<'date' | 'name'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const funderPool = players.filter(p => p.isFunder);
+  const funderPool = Array.isArray(players) ? players.filter(p => p.isFunder) : [];
 
   const initialPeriodData: Partial<Period> = {
     name: '',
@@ -57,12 +57,12 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
   }, [sessionConfirmDeleteId]);
 
   const sortedPeriods = useMemo(() => {
-    return [...periods].sort((a, b) => {
+    return (Array.isArray(periods) ? [...periods] : []).sort((a, b) => {
       let comparison = 0;
       if (sortBy === 'date') {
-        comparison = a.startDate.localeCompare(b.startDate);
+        comparison = (a.startDate || '').localeCompare(b.startDate || '');
       } else {
-        comparison = a.name.localeCompare(b.name, 'zh-CN');
+        comparison = (a.name || '').localeCompare(b.name || '', 'zh-CN');
       }
       return sortOrder === 'asc' ? comparison : -comparison;
     });
@@ -128,7 +128,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
     csv += `打球流水明细\n`;
     csv += `日期,星期,额外费用,参与人员,实付金额\n`;
 
-    const sortedSessions = [...(period.sessions || [])].sort((a, b) => a.date.localeCompare(b.date));
+    const sortedSessions = [...(period.sessions || [])].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
     sortedSessions.forEach(session => {
       const weekday = getWeekday(session.date);
@@ -206,7 +206,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
       if (p.id === periodId) {
         return {
           ...p,
-          sessions: p.sessions.filter(s => s.id !== sessionId)
+          sessions: (p.sessions || []).filter(s => s.id !== sessionId)
         };
       }
       return p;
@@ -222,7 +222,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
     if (editingSessionId) {
       setPeriods(prev => prev.map(p => p.id === periodId ? {
         ...p,
-        sessions: p.sessions.map(s => s.id === editingSessionId ? { ...s, date: sessionFormDate, sessionCost: sessionFormCost, attendees: selectedAttendees } : s)
+        sessions: (p.sessions || []).map(s => s.id === editingSessionId ? { ...s, date: sessionFormDate, sessionCost: sessionFormCost, attendees: selectedAttendees } : s)
       } : p));
     } else {
       const session: Session = {
@@ -233,7 +233,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
       };
       setPeriods(prev => prev.map(p => {
         if (p.id === periodId) {
-          const newSessions = [session, ...p.sessions].sort((a, b) => b.date.localeCompare(a.date));
+          const newSessions = [session, ...(p.sessions || [])].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
           return { ...p, sessions: newSessions };
         }
         return p;
@@ -256,8 +256,8 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
     if (isFunder) return 0;
     
     if (periodType === PlayerType.MONTHLY || periodType === PlayerType.HALF_MONTHLY) {
-      const alreadyAttended = currentPeriod?.sessions.some(s => 
-        s.id !== editingSessionId && s.attendees.some(a => a.playerId === player.id)
+      const alreadyAttended = (currentPeriod?.sessions || []).some(s => 
+        s.id !== editingSessionId && (s.attendees || []).some(a => a.playerId === player.id)
       );
       return alreadyAttended ? 0 : periodFee;
     }
@@ -281,7 +281,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
 
   // --- 模态框渲染 ---
   const renderDeleteModal = () => {
-    const period = periods.find(p => p.id === periodToDeleteId);
+    const period = Array.isArray(periods) ? periods.find(p => p.id === periodToDeleteId) : undefined;
     if (!period) return null;
 
     return (
@@ -296,7 +296,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
             <h3 className="text-xl font-black text-gray-800 mb-2">确认删除周期？</h3>
             <div className="bg-red-50 rounded-2xl p-4 mb-6">
               <p className="text-xs text-red-600 font-bold leading-relaxed">
-                警告：删除周期 <span className="underline font-black">"{period.name}"</span> 将会导致其包含的 <span className="font-black underline">{period.sessions.length} 场打球记录</span> 被永久清除，且无法恢复相关财务数据。
+                警告：删除周期 <span className="underline font-black">"{period.name}"</span> 将会导致其包含的 <span className="font-black underline">{period.sessions?.length || 0} 场打球记录</span> 被永久清除，且无法恢复相关财务数据。
               </p>
             </div>
           </div>
@@ -560,7 +560,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
                    </button>
                    <div className="text-right">
                       <p className="text-[9px] text-gray-400 font-black">场次</p>
-                      <p className="font-black text-emerald-600">{period.sessions.length}</p>
+                      <p className="font-black text-emerald-600">{(period.sessions || []).length}</p>
                    </div>
                    <div className={`transition-transform duration-300 ml-2 ${isExpanded ? 'rotate-180 text-emerald-500' : 'text-gray-300'}`}>
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
@@ -684,7 +684,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
       {activeSessionPeriod && renderSessionForm(activeSessionPeriod)}
       {periodToDeleteId && renderDeleteModal()}
 
-      {periods.length === 0 && (
+      {(!Array.isArray(periods) || periods.length === 0) && (
         <div className="text-center py-24 text-gray-300">
           <p className="text-5xl mb-4 opacity-10">🏸</p>
           <p className="text-sm font-black uppercase tracking-widest">尚未创建结算周期</p>

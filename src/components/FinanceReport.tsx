@@ -11,9 +11,9 @@ interface FinanceReportProps {
 }
 
 const FinanceReport: React.FC<FinanceReportProps> = ({ periods, players, initialPeriodId, onPeriodChange }) => {
-  const selectedPeriod = initialPeriodId 
+  const selectedPeriod = initialPeriodId && Array.isArray(periods)
     ? periods.find(p => p.id === initialPeriodId) 
-    : (periods.length > 0 ? periods[0] : null);
+    : (Array.isArray(periods) && periods.length > 0 ? periods[0] : null);
 
   const calculatePeriodStats = (period: Period) => {
     const grossIncome = Array.isArray(period.sessions) ? period.sessions.reduce((acc, s) => acc + (Array.isArray(s.attendees) ? s.attendees.reduce((sum, a) => sum + (a.fee || 0), 0) : 0), 0) : 0;
@@ -65,7 +65,7 @@ const FinanceReport: React.FC<FinanceReportProps> = ({ periods, players, initial
         <h2 className="text-xl font-black text-gray-800">财务统计报表</h2>
       </div>
 
-      {periods.length > 0 && (
+      {(Array.isArray(periods) && periods.length > 0) && (
         <div>
           <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
             选择结算周期
@@ -89,7 +89,7 @@ const FinanceReport: React.FC<FinanceReportProps> = ({ periods, players, initial
         </div>
       )}
 
-      {periods.length === 0 ? (
+      {(!Array.isArray(periods) || periods.length === 0) ? (
         <div className="text-center py-20 text-gray-400">
           <p className="text-5xl mb-4 opacity-10">📊</p>
           <p className="text-sm font-bold">暂无历史结算数据</p>

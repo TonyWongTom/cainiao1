@@ -56,10 +56,10 @@ const App: React.FC = () => {
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(null);
 
   const activePeriod = useMemo(() => {
-    if (selectedPeriodId) {
+    if (selectedPeriodId && Array.isArray(periods)) {
       return periods.find(p => p.id === selectedPeriodId) || null;
     }
-    return periods.length > 0 ? periods[0] : null;
+    return Array.isArray(periods) && periods.length > 0 ? periods[0] : null;
   }, [periods, selectedPeriodId]);
 
   // Wrapper functions to keep existing component logic working while piping to Firestore
@@ -155,7 +155,7 @@ const App: React.FC = () => {
       );
     }
 
-    if (error && players.length === 0 && periods.length === 0) {
+    if (error && (!Array.isArray(players) || players.length === 0) && (!Array.isArray(periods) || periods.length === 0)) {
       return (
         <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-8">
           <span className="text-5xl mb-6">⚠️</span>

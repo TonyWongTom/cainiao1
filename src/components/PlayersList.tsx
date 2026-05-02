@@ -22,7 +22,7 @@ const PlayersList: React.FC<PlayersListProps> = ({ players, setPlayers, periods 
   });
 
   const latestPeriod = useMemo(() => {
-    return periods.length > 0 ? periods[periods.length - 1] : null;
+    return Array.isArray(periods) && periods.length > 0 ? periods[periods.length - 1] : null;
   }, [periods]);
 
   useEffect(() => {
