@@ -7,7 +7,6 @@ import {
   deleteDoc, 
   onSnapshot, 
   query, 
-  orderBy,
   runTransaction,
   getDocFromServer
 } from 'firebase/firestore';
@@ -99,7 +98,7 @@ export const dbService = {
   async getPeriods(): Promise<Period[]> {
     const path = 'periods';
     try {
-      const q = query(collection(db, path), orderBy('startDate', 'desc'));
+      const q = query(collection(db, path));
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => doc.data() as Period);
     } catch (error) {
@@ -142,7 +141,7 @@ export const dbService = {
   },
 
   subscribeToPeriods(callback: (periods: Period[]) => void) {
-    const q = query(collection(db, 'periods'), orderBy('startDate', 'desc'));
+    const q = query(collection(db, 'periods'));
     return onSnapshot(q, (snapshot) => {
       const periods = snapshot.docs.map(doc => doc.data() as Period);
       callback(periods);
