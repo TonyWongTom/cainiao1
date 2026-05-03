@@ -86,22 +86,22 @@ const Dashboard: React.FC<DashboardProps> = ({ players, periods, activePeriod, o
           <div className="space-y-3">
             <div className="p-5 bg-black/20 backdrop-blur-md text-white border border-white/10 rounded-2xl shadow-xl relative overflow-hidden">
                <div className="absolute top-0 right-0 p-4 opacity-10 text-4xl">👑</div>
-               <p className="text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest">集资人财务结算 (每人)</p>
+               <p className="text-[10px] font-black text-emerald-900 mb-2 uppercase tracking-widest">集资人财务结算 (每人)</p>
                
                <div className="flex justify-between items-end">
                  <div>
-                   <p className="text-[10px] text-emerald-400 font-bold mb-0.5">本期返款 (↑)</p>
+                   <p className="text-[10px] text-gray-800 font-bold mb-0.5">本期返款 (↑)</p>
                    <p className="text-2xl font-black">¥{refundPerFunder.toFixed(2)}</p>
                  </div>
                  <div className="text-right">
                    <p className="text-[10px] text-red-400 font-bold mb-0.5">预付投入 (↓)</p>
-                   <p className="text-lg font-black opacity-80">¥{investmentPerFunder.toFixed(2)}</p>
+                   <p className="text-lg font-black opacity-80 text-[#e3e5e4]">¥{investmentPerFunder.toFixed(2)}</p>
                  </div>
                </div>
 
                <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
-                 <span className="text-[10px] font-bold text-gray-400 italic">本期集资人数：{funderIdsCount}人</span>
-                 <span className={`text-xs font-black px-2 py-0.5 rounded ${refundPerFunder >= investmentPerFunder ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                 <span className="text-[10px] font-bold text-emerald-900 italic">本期集资人数：{funderIdsCount}人</span>
+                 <span className={`text-xs font-black px-2 py-0.5 rounded ${refundPerFunder >= investmentPerFunder ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/20 text-red-400'}`}>
                    {refundPerFunder >= investmentPerFunder ? '盈余' : '超支'} ¥{Math.abs(refundPerFunder - investmentPerFunder).toFixed(2)}
                  </span>
                </div>

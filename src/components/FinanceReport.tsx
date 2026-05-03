@@ -137,21 +137,21 @@ const FinanceReport: React.FC<FinanceReportProps> = ({ periods, players, initial
 
                   <div className="bg-black/20 backdrop-blur-md border border-white/20 rounded-2xl p-5 text-white shadow-lg relative mb-6">
                     <div className="flex justify-between items-center mb-4">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">集资人个人账单 (每人)</p>
+                      <p className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">集资人个人账单 (每人)</p>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-[9px] text-red-400 font-bold mb-1 italic">本期预付投入</p>
-                        <p className="text-lg font-black opacity-90">¥{stats.investmentPerFunder.toFixed(2)}</p>
+                        <p className="text-lg font-black opacity-90 text-[#e3e5e4]">¥{stats.investmentPerFunder.toFixed(2)}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[9px] text-emerald-400 font-bold mb-1 italic">本期所得返款</p>
+                        <p className="text-[9px] text-emerald-900 font-bold mb-1 italic">本期所得返款</p>
                         <p className="text-lg font-black">¥{stats.refundPerFunder.toFixed(2)}</p>
                       </div>
                     </div>
                     <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
-                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">最终实际打球成本：</span>
-                      <span className="text-sm font-black text-amber-400">¥{(stats.investmentPerFunder - stats.refundPerFunder).toFixed(2)}</span>
+                      <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-tighter">最终实际打球成本：</span>
+                      <span className="text-sm font-black text-red-900">¥{(stats.investmentPerFunder - stats.refundPerFunder).toFixed(2)}</span>
                     </div>
                   </div>
 
