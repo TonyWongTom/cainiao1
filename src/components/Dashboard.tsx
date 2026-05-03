@@ -101,7 +101,7 @@ const Dashboard: React.FC<DashboardProps> = ({ players, periods, activePeriod, o
 
                <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
                  <span className="text-[10px] font-bold text-emerald-900 italic">本期集资人数：{funderIdsCount}人</span>
-                 <span className={`text-xs font-black px-2 py-0.5 rounded ${refundPerFunder >= investmentPerFunder ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/20 text-red-400'}`}>
+                 <span className={`text-xs font-black px-2 py-0.5 rounded ${refundPerFunder >= investmentPerFunder ? 'bg-emerald-500/20 text-[#fb676a]' : 'bg-white/20 text-red-400'}`}>
                    {refundPerFunder >= investmentPerFunder ? '盈余' : '超支'} ¥{Math.abs(refundPerFunder - investmentPerFunder).toFixed(2)}
                  </span>
                </div>

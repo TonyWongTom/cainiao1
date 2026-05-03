@@ -12,7 +12,7 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = process.env.PORT || 8080;
+const PORT = 3000;
 const ACCESS_PASSWORD = process.env.VITE_ADMIN_PASSWORD || process.env.VITE_APP_PASSWORD || process.env.APP_PASSWORD || 'cainiao';
 
 async function startServer() {
@@ -70,17 +70,30 @@ async function startServer() {
     }
   }
 
-  let db: admin.firestore.Firestore;
+  let db: admin.firestore.Firestore | null = null;
   try {
     const firestoreApp = admin.app();
     db = getFirestore(firestoreApp, databaseId);
   } catch (err) {
     console.warn('Firestore init fallback to default:', err);
-    db = getFirestore();
+    try {
+      db = getFirestore();
+    } catch (fallbackErr) {
+      console.error('Failed to initialize Firestore completely:', fallbackErr);
+    }
   }
 
   // --- 3. API ROUTER DEFINITION (PHYSICAL ISOLATION) ---
   const apiRouter = express.Router();
+
+  // Route middleware to check if DB is available
+  const dbCheckMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (!db) {
+      res.status(500).json({ error: 'Database not initialized on server.' });
+      return;
+    }
+    next();
+  };
 
   // Auth Helper
   const authMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -98,28 +111,28 @@ async function startServer() {
   });
 
   // Players
-  apiRouter.get('/players', async (req, res) => {
+  apiRouter.get('/players', dbCheckMiddleware, async (req, res) => {
     try {
-      const snapshot = await db.collection('players').get();
+      const snapshot = await db!.collection('players').get();
       res.json(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     } catch (err) {
       res.json([]);
     }
   });
 
-  apiRouter.post('/players', authMiddleware, async (req, res) => {
+  apiRouter.post('/players', authMiddleware, dbCheckMiddleware, async (req, res) => {
     try {
       if (!req.body || !req.body.id) throw new Error('Missing ID');
-      await db.collection('players').doc(req.body.id).set(req.body, { merge: true });
+      await db!.collection('players').doc(req.body.id).set(req.body, { merge: true });
       res.status(201).json({ success: true, id: req.body.id });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
   });
 
-  apiRouter.delete('/players/:id', authMiddleware, async (req, res) => {
+  apiRouter.delete('/players/:id', authMiddleware, dbCheckMiddleware, async (req, res) => {
     try {
-      await db.collection('players').doc(req.params.id).delete();
+      await db!.collection('players').doc(req.params.id).delete();
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -127,28 +140,28 @@ async function startServer() {
   });
 
   // Periods
-  apiRouter.get('/periods', async (req, res) => {
+  apiRouter.get('/periods', dbCheckMiddleware, async (req, res) => {
     try {
-      const snapshot = await db.collection('periods').get();
+      const snapshot = await db!.collection('periods').get();
       res.json(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     } catch (err) {
       res.json([]);
     }
   });
 
-  apiRouter.post('/periods', authMiddleware, async (req, res) => {
+  apiRouter.post('/periods', authMiddleware, dbCheckMiddleware, async (req, res) => {
     try {
       if (!req.body || !req.body.id) throw new Error('Missing ID');
-      await db.collection('periods').doc(req.body.id).set(req.body, { merge: true });
+      await db!.collection('periods').doc(req.body.id).set(req.body, { merge: true });
       res.status(201).json({ success: true, id: req.body.id });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
   });
 
-  apiRouter.delete('/periods/:id', authMiddleware, async (req, res) => {
+  apiRouter.delete('/periods/:id', authMiddleware, dbCheckMiddleware, async (req, res) => {
     try {
-      await db.collection('periods').doc(req.params.id).delete();
+      await db!.collection('periods').doc(req.params.id).delete();
       res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
