@@ -1,16 +1,17 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Player, Period } from '../types';
 import { formatDateChinese } from '../utils/dateUtils';
+import { useAppContext } from '../context/AppContext';
 
 interface DashboardProps {
-  players: Player[];
-  periods: Period[];
   activePeriod: Period | null;
   onPeriodChange: (id: string) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ players, periods, activePeriod, onPeriodChange }) => {
+const Dashboard: React.FC<DashboardProps> = ({ activePeriod, onPeriodChange }) => {
+  const { players, periods } = useAppContext();
+
   // Total fees collected
   const grossFees = (activePeriod?.sessions || []).reduce((acc, s) => acc + (s.attendees || []).reduce((sum, a) => sum + a.fee, 0), 0) || 0;
   // Total extra session costs

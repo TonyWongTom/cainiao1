@@ -1,60 +1,19 @@
 
 // Build trigger: Updated Firebase configuration keys
-import React, { useState, useEffect, useMemo } from 'react';
-import { Player, Period, View } from './types';
-import { INITIAL_FUNDERS, Icons } from './constants';
+import React, { useState, useMemo } from 'react';
+import { Period, View } from './types';
+import { Icons } from './constants';
 import Dashboard from './components/Dashboard';
 import PlayersList from './components/PlayersList';
 import PeriodsList from './components/PeriodsList';
 import FinanceReport from './components/FinanceReport';
 import PasswordGate from './components/PasswordGate';
-import { dbService } from './services/dbService';
+import { AppProvider, useAppContext } from './context/AppContext';
 
-const App: React.FC = () => {
+const MainApp: React.FC = () => {
   const [view, setView] = useState<View>('dashboard');
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [periods, setPeriods] = useState<Period[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [notification, setNotification] = useState<{message: string, type: 'error' | 'success'} | null>(null);
-
-  // Clear notification after 5 seconds
-  useEffect(() => {
-    if (notification) {
-      const timer = setTimeout(() => setNotification(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [notification]);
-
-  // Load initial data and subscribe to real-time updates
-  useEffect(() => {
-    let hasAttemptedInit = false;
-    
-    const unsubPlayers = dbService.subscribeToPlayers((syncedPlayers) => {
-      setPlayers(syncedPlayers);
-      if (syncedPlayers.length === 0 && !hasAttemptedInit) {
-        hasAttemptedInit = true;
-        // Initialize with default funders if totally empty (first run)
-        INITIAL_FUNDERS.forEach(async (p) => {
-          try {
-            await dbService.savePlayer(p);
-          } catch (e) {
-            console.error("Failed to save initial player:", e);
-          }
-        });
-      }
-    });
-
-    const unsubPeriods = dbService.subscribeToPeriods((syncedPeriods) => {
-      setPeriods(syncedPeriods);
-      setIsLoading(false);
-    });
-
-    return () => {
-      unsubPlayers();
-      unsubPeriods();
-    };
-  }, []);
+  
+  const { players, periods, isLoading, error, notification } = useAppContext();
 
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(null);
 
@@ -64,88 +23,6 @@ const App: React.FC = () => {
     }
     return Array.isArray(periods) && periods.length > 0 ? periods[0] : null;
   }, [periods, selectedPeriodId]);
-
-  // Wrapper functions to keep existing component logic working while piping to Firestore
-  const handleSetPlayers: React.Dispatch<React.SetStateAction<Player[]>> = (action) => {
-    const nextPlayers = typeof action === 'function' ? action(players) : action;
-    
-    // Process changes
-    const processChanges = async () => {
-      try {
-        // Check for deletions
-        for (const p of players) {
-          if (!nextPlayers.find(np => np.id === p.id)) {
-            await dbService.deletePlayer(p.id);
-          }
-        }
-        
-        // Check for additions/updates
-        for (const p of nextPlayers) {
-          const existing = players.find(ep => ep.id === p.id);
-          if (!existing || JSON.stringify(existing) !== JSON.stringify(p)) {
-            await dbService.savePlayer(p);
-          }
-        }
-        
-        // Update local state ONLY after successful DB operations
-        setPlayers(nextPlayers);
-        setNotification({ 
-          message: "人员更新成功", 
-          type: 'success' 
-        });
-      } catch (err: any) {
-        console.error("Sync error:", err);
-        setNotification({ 
-          message: "数据保存失败，请检查网络权限: " + err.message, 
-          type: 'error' 
-        });
-        // Fetch latest from server to ensure sync
-        const currentPlayers = await dbService.getPlayers();
-        setPlayers(currentPlayers);
-      }
-    };
-
-    processChanges();
-  };
-
-  const handleSetPeriods: React.Dispatch<React.SetStateAction<Period[]>> = (action) => {
-    const nextPeriods = typeof action === 'function' ? action(periods) : action;
-    
-    const processChanges = async () => {
-      try {
-        for (const p of nextPeriods) {
-          const existing = periods.find(ep => ep.id === p.id);
-          if (!existing || JSON.stringify(existing) !== JSON.stringify(p)) {
-            await dbService.savePeriod(p);
-          }
-        }
-        
-        for (const p of periods) {
-          if (!nextPeriods.find(np => np.id === p.id)) {
-            await dbService.deletePeriod(p.id);
-          }
-        }
-        
-        // Update local state ONLY after successful DB operations
-        setPeriods(nextPeriods);
-        setNotification({ 
-          message: "结算信息更新成功", 
-          type: 'success' 
-        });
-      } catch (err: any) {
-        console.error("Sync error:", err);
-        setNotification({ 
-          message: "数据保存失败，请检查网络权限: " + err.message, 
-          type: 'error' 
-        });
-        // Fetch latest from server to ensure sync
-        const currentPeriods = await dbService.getPeriods();
-        setPeriods(currentPeriods);
-      }
-    };
-
-    processChanges();
-  };
 
   const renderView = () => {
     if (isLoading) {
@@ -184,15 +61,15 @@ const App: React.FC = () => {
 
     switch (view) {
       case 'dashboard':
-        return <Dashboard players={players} periods={periods} activePeriod={activePeriod} onPeriodChange={setSelectedPeriodId} />;
+        return <Dashboard activePeriod={activePeriod} onPeriodChange={setSelectedPeriodId} />;
       case 'players':
-        return <PlayersList players={players} setPlayers={handleSetPlayers} periods={periods} />;
+        return <PlayersList />;
       case 'periods':
-        return <PeriodsList periods={periods} setPeriods={handleSetPeriods} players={players} setPlayers={handleSetPlayers} />;
+        return <PeriodsList />;
       case 'finance':
-        return <FinanceReport periods={periods} players={players} initialPeriodId={selectedPeriodId} onPeriodChange={setSelectedPeriodId} />;
+        return <FinanceReport initialPeriodId={selectedPeriodId} onPeriodChange={setSelectedPeriodId} />;
       default:
-        return <Dashboard players={players} periods={periods} activePeriod={activePeriod} onPeriodChange={setSelectedPeriodId} />;
+        return <Dashboard activePeriod={activePeriod} onPeriodChange={setSelectedPeriodId} />;
     }
   };
 
@@ -280,6 +157,14 @@ const App: React.FC = () => {
         </div>
       </div>
     </PasswordGate>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AppProvider>
+      <MainApp />
+    </AppProvider>
   );
 };
 

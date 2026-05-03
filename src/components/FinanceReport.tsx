@@ -2,15 +2,16 @@
 import React from 'react';
 import { Period, Player, PlayerType } from '../types';
 import { formatMonthDay } from '../utils/dateUtils';
+import { useAppContext } from '../context/AppContext';
 
 interface FinanceReportProps {
-  periods: Period[];
-  players: Player[];
   initialPeriodId: string | null;
   onPeriodChange: (id: string) => void;
 }
 
-const FinanceReport: React.FC<FinanceReportProps> = ({ periods, players, initialPeriodId, onPeriodChange }) => {
+const FinanceReport: React.FC<FinanceReportProps> = ({ initialPeriodId, onPeriodChange }) => {
+  const { players, periods } = useAppContext();
+
   const selectedPeriod = initialPeriodId && Array.isArray(periods)
     ? periods.find(p => p.id === initialPeriodId) 
     : (Array.isArray(periods) && periods.length > 0 ? periods[0] : null);

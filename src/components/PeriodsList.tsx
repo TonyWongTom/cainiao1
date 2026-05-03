@@ -5,17 +5,16 @@ import { zhCN } from 'date-fns/locale';
 import { Period, Player, Session, PlayerType } from '../types';
 import { Icons, DEFAULT_SESSION_FEE } from '../constants';
 import { formatDateChinese } from '../utils/dateUtils';
+import { useAppContext } from '../context/AppContext';
 
 registerLocale('zh-CN', zhCN);
 
 interface PeriodsListProps {
-  periods: Period[];
-  setPeriods: React.Dispatch<React.SetStateAction<Period[]>>;
-  players: Player[];
-  setPlayers: React.Dispatch<React.SetStateAction<Player[]>>;
 }
 
-const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players, setPlayers }) => {
+const PeriodsList: React.FC<PeriodsListProps> = () => {
+  const { periods, setPeriods, players, setPlayers } = useAppContext();
+
   const [isAddingPeriod, setIsAddingPeriod] = useState(false);
   const [editingPeriodId, setEditingPeriodId] = useState<string | null>(null);
   const [expandedPeriodId, setExpandedPeriodId] = useState<string | null>(null);

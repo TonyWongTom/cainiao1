@@ -2,14 +2,14 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Player, PlayerType, Period } from '../types';
 import { Icons, DEFAULT_SESSION_FEE } from '../constants';
+import { useAppContext } from '../context/AppContext';
 
 interface PlayersListProps {
-  players: Player[];
-  setPlayers: React.Dispatch<React.SetStateAction<Player[]>>;
-  periods: Period[];
 }
 
-const PlayersList: React.FC<PlayersListProps> = ({ players, setPlayers, periods }) => {
+const PlayersList: React.FC<PlayersListProps> = () => {
+  const { players, setPlayers, periods } = useAppContext();
+
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
