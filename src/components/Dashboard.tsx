@@ -175,7 +175,7 @@ const Dashboard: React.FC<DashboardProps> = ({ players, periods, activePeriod, o
               <path d="M8 40 L8 32 C8 23.163 15.163 16 24 16 L76 16 C84.837 16 92 23.163 92 32 L92 40 Z" fill="#ef4444" />
               <path d="M26 6 L26 22" stroke="#d4d4d8" strokeWidth="6" strokeLinecap="round" />
               <path d="M74 6 L74 22" stroke="#d4d4d8" strokeWidth="6" strokeLinecap="round" />
-              <text x="50" y="32" fontSize="12" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fill="#ffffff" textAnchor="middle" letterSpacing="1">2月</text>
+              <text x="50" y="33" fontSize="12" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fill="#ffffff" textAnchor="middle" letterSpacing="1">FEB</text>
               <text x="50" y="82" fontSize="46" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fill="#27272a" textAnchor="middle" letterSpacing="-2">10</text>
             </svg>
           </div>
