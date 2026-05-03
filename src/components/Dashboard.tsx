@@ -169,7 +169,15 @@ const Dashboard: React.FC<DashboardProps> = ({ players, periods, activePeriod, o
         </div>
         <div className="bg-white/20 backdrop-blur-md p-5 rounded-3xl shadow-sm border border-white/30 flex flex-col items-center justify-center text-center h-full">
           <div className="w-16 h-16 mb-2 flex items-center justify-center relative shrink-0">
-            <p className="text-[47px] leading-none drop-shadow-[0_4px_8px_rgba(0,0,0,0.1)] transition-transform hover:scale-105 mt-1 ml-1">📅</p>
+            <svg viewBox="0 0 100 100" className="w-[47px] h-[47px] drop-shadow-[0_4px_8px_rgba(0,0,0,0.1)] transition-transform hover:scale-105 mt-1 ml-1">
+              <rect x="8" y="16" width="84" height="84" rx="16" fill="#f4f4f5" />
+              <rect x="8" y="16" width="84" height="80" rx="16" fill="#ffffff" />
+              <path d="M8 40 L8 32 C8 23.163 15.163 16 24 16 L76 16 C84.837 16 92 23.163 92 32 L92 40 Z" fill="#ef4444" />
+              <path d="M26 6 L26 22" stroke="#d4d4d8" strokeWidth="6" strokeLinecap="round" />
+              <path d="M74 6 L74 22" stroke="#d4d4d8" strokeWidth="6" strokeLinecap="round" />
+              <text x="50" y="32" fontSize="12" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fill="#ffffff" textAnchor="middle" letterSpacing="1">2月</text>
+              <text x="50" y="82" fontSize="46" fontFamily="system-ui, -apple-system, sans-serif" fontWeight="800" fill="#27272a" textAnchor="middle" letterSpacing="-2">10</text>
+            </svg>
           </div>
           <p className="text-[11.5px] font-black text-emerald-800/80 uppercase tracking-widest mt-1">结算历史</p>
           <p className="text-xl font-black text-emerald-900">{periods.length}</p>
