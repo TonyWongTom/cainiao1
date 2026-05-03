@@ -147,7 +147,7 @@ const PlayersList: React.FC<PlayersListProps> = ({ players, setPlayers, periods 
   };
 
   const renderPlayerForm = (title: string) => (
-    <div className="bg-white p-4 rounded-xl shadow-lg border-2 border-emerald-500 animate-in zoom-in-95 duration-200">
+    <div className="bg-white/20 backdrop-blur-md p-4 rounded-2xl shadow-lg border-2 border-emerald-500/50 animate-in zoom-in-95 duration-200">
       <h3 className="font-bold mb-4 text-emerald-800 text-sm">{title}</h3>
       <div className="space-y-4">
         <div>
@@ -181,8 +181,8 @@ const PlayersList: React.FC<PlayersListProps> = ({ players, setPlayers, periods 
             <label className="block text-[10px] text-gray-400 mb-1 font-black uppercase tracking-widest">单次(元)</label>
             <input 
               type="number" 
-              value={formData.defaultFee} 
-              onChange={e => setFormData({ ...formData, defaultFee: Number(e.target.value) })} 
+              value={formData.defaultFee === '' as any ? '' : formData.defaultFee} 
+              onChange={e => setFormData({ ...formData, defaultFee: e.target.value === '' ? '' as any : Number(e.target.value) })} 
               className="w-full border border-gray-200 rounded-lg p-2 text-sm outline-none font-mono font-bold" 
             />
           </div>
@@ -201,7 +201,7 @@ const PlayersList: React.FC<PlayersListProps> = ({ players, setPlayers, periods 
           </label>
         </div>
         <div className="flex gap-2 pt-2">
-          <button type="button" onClick={handleSave} className="flex-1 bg-emerald-600 text-white py-2.5 rounded-lg font-black text-sm shadow-md active:scale-95 transition-all">保存</button>
+          <button type="button" onClick={handleSave} className="flex-1 bg-emerald-500 text-white py-2.5 rounded-lg font-black text-sm shadow-[0_0_15px_rgba(16,185,129,0.5)] ring-1 ring-emerald-300 active:scale-95 transition-all">保存</button>
           <button type="button" onClick={() => { setIsAdding(false); setEditingId(null); }} className="flex-1 bg-gray-100 text-gray-500 py-2.5 rounded-lg font-bold text-sm">取消</button>
         </div>
       </div>
@@ -222,24 +222,24 @@ const PlayersList: React.FC<PlayersListProps> = ({ players, setPlayers, periods 
             setEditingId(null);
             setFormData({ name: '', type: PlayerType.PER_SESSION, defaultFee: DEFAULT_SESSION_FEE, isFunder: false });
           }}
-          className="bg-gray-900 text-white px-4 py-2 rounded-xl text-sm flex items-center gap-1 font-black shadow-lg shadow-gray-200 active:scale-95 transition-all"
+          className="bg-black/20 backdrop-blur-md text-white border border-white/20 px-4 py-2 rounded-xl text-sm flex items-center gap-1 font-black shadow-lg shadow-black/5 active:scale-95 transition-all"
         >
           <Icons.Plus /> 新增成员
         </button>
       </div>
 
       <div className="grid grid-cols-3 gap-2 mb-6">
-        <button onClick={exportToCSV} className="flex flex-col items-center justify-center p-3 bg-white border border-gray-100 rounded-2xl shadow-sm active:bg-gray-50 group">
-          <div className="text-emerald-500 mb-1 group-active:scale-110 transition-transform"><Icons.Download /></div>
-          <span className="text-[10px] font-black text-gray-500">导出名单</span>
+        <button onClick={exportToCSV} className="flex flex-col items-center justify-center p-3 bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl shadow-sm active:bg-white/30 group">
+          <div className="text-emerald-800 mb-1 group-active:scale-110 transition-transform"><Icons.Download /></div>
+          <span className="text-[10px] font-black text-emerald-800/80">导出名单</span>
         </button>
-        <button onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center justify-center p-3 bg-white border border-gray-100 rounded-2xl shadow-sm active:bg-gray-50 group">
-          <div className="text-blue-500 mb-1 group-active:scale-110 transition-transform"><Icons.Upload /></div>
-          <span className="text-[10px] font-black text-gray-500">导入名单</span>
+        <button onClick={() => fileInputRef.current?.click()} className="flex flex-col items-center justify-center p-3 bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl shadow-sm active:bg-white/30 group">
+          <div className="text-blue-800 mb-1 group-active:scale-110 transition-transform"><Icons.Upload /></div>
+          <span className="text-[10px] font-black text-emerald-800/80">导入名单</span>
         </button>
-        <button onClick={downloadTemplate} className="flex flex-col items-center justify-center p-3 bg-amber-50 border border-amber-100 rounded-2xl shadow-sm active:bg-amber-100 group">
-          <div className="text-amber-600 mb-1 text-xs font-black">CSV</div>
-          <span className="text-[10px] font-black text-amber-700">下载模板</span>
+        <button onClick={downloadTemplate} className="flex flex-col items-center justify-center p-3 bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl shadow-sm active:bg-white/30 group">
+          <div className="text-amber-800 mb-1 text-xs font-black">CSV</div>
+          <span className="text-[10px] font-black text-emerald-800/80">下载模板</span>
         </button>
         <input type="file" ref={fileInputRef} onChange={importFromCSV} accept=".csv" className="hidden" />
       </div>
@@ -262,12 +262,12 @@ const PlayersList: React.FC<PlayersListProps> = ({ players, setPlayers, periods 
 
           const activeFunder = isCurrentlyFunder(player.id);
           return (
-            <div key={player.id} className={`bg-white p-4 rounded-2xl shadow-sm border flex justify-between items-center transition-all ${activeFunder ? 'border-amber-400 bg-amber-50/10 ring-1 ring-amber-400/20' : 'border-gray-100'}`}>
+            <div key={player.id} className={`bg-white/20 backdrop-blur-md p-4 rounded-2xl shadow-sm border flex justify-between items-center transition-all ${activeFunder ? 'border-amber-400 bg-amber-500/10 ring-1 ring-amber-400/20' : 'border-white/30'}`}>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-black text-gray-800 text-base">{player.name}</span>
+                  <span className="font-black text-emerald-900 text-base">{player.name}</span>
                   {activeFunder ? (
-                    <span className="text-[9px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-black shadow-sm flex items-center gap-0.5">
+                    <span className="text-[9px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-black shadow-[0_0_10px_rgba(245,158,11,0.6)] ring-1 ring-amber-300 flex items-center gap-0.5">
                       <span className="text-[11px]">👑</span> 本期集资
                     </span>
                   ) : player.isFunder ? (
@@ -277,16 +277,16 @@ const PlayersList: React.FC<PlayersListProps> = ({ players, setPlayers, periods 
                   ) : null}
                 </div>
                 <div className="text-xs text-gray-500 mt-2 flex items-center gap-3">
-                  <span className={`px-2 py-0.5 rounded font-black ${
-                    player.type === PlayerType.MONTHLY ? 'bg-purple-100 text-purple-700' : 
-                    player.type === PlayerType.HALF_MONTHLY ? 'bg-blue-100 text-blue-700' : 
-                    'bg-green-100 text-green-700'
+                  <span className={`px-2 py-1 rounded-lg text-white font-black shadow-lg ring-1 ring-white/50 ${
+                    player.type === PlayerType.MONTHLY ? 'bg-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.6)]' : 
+                    player.type === PlayerType.HALF_MONTHLY ? 'bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.6)]' : 
+                    'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.6)]'
                   }`}>{player.type}</span>
                   <span className="font-mono font-black text-gray-700">¥{player.defaultFee}</span>
                 </div>
               </div>
               <div className="flex gap-2 items-center">
-                <button type="button" onClick={() => startEdit(player)} className="text-emerald-600 text-xs font-black bg-white border border-emerald-100 px-3 py-1.5 rounded-lg shadow-sm active:bg-emerald-50">编辑</button>
+                <button type="button" onClick={() => startEdit(player)} className="text-emerald-800 text-xs font-black bg-white/30 backdrop-blur-md border border-white/40 px-3 py-1.5 rounded-lg shadow-sm active:bg-white/40">编辑</button>
                 <button 
                   type="button" 
                   onClick={(e) => handleDelete(e, player.id)} 

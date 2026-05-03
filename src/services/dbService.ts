@@ -93,10 +93,12 @@ export const dbService = {
   async getPlayers(): Promise<Player[]> {
     try {
       const data = await apiRequest('/players');
+      // Detect if we get a quota error or something explicitly returned as empty from error
+      if (!data) throw new Error('No data');
       return Array.isArray(data) ? data : [];
     } catch (error: any) {
       console.error('Failed to get players:', error);
-      return [];
+      throw error; // Throw error so subscriber knows it failed
     }
   },
 
@@ -133,10 +135,11 @@ export const dbService = {
   async getPeriods(): Promise<Period[]> {
     try {
       const data = await apiRequest('/periods');
+      if (!data) throw new Error('No data');
       return Array.isArray(data) ? data : [];
     } catch (error: any) {
       console.error('Failed to get periods:', error);
-      return [];
+      throw error;
     }
   },
 
@@ -174,9 +177,13 @@ export const dbService = {
     let active = true;
     const poll = async () => {
       if (!active) return;
-      const players = await this.getPlayers();
-      callback(players);
-      setTimeout(poll, 10000); // Poll every 10 seconds
+      try {
+        const players = await this.getPlayers();
+        callback(players);
+        setTimeout(poll, 10000); // Poll every 10 seconds on success
+      } catch (err) {
+        setTimeout(poll, 30000); // Wait 30 seconds on error
+      }
     };
     poll();
     return () => { active = false; };
@@ -186,9 +193,13 @@ export const dbService = {
     let active = true;
     const poll = async () => {
       if (!active) return;
-      const periods = await this.getPeriods();
-      callback(periods);
-      setTimeout(poll, 10000); // Poll every 10 seconds
+      try {
+        const periods = await this.getPeriods();
+        callback(periods);
+        setTimeout(poll, 10000); // Poll every 10 seconds on success
+      } catch (err) {
+        setTimeout(poll, 30000); // Wait 30 seconds on error
+      }
     };
     poll();
     return () => { active = false; };

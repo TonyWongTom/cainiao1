@@ -40,7 +40,7 @@ const Dashboard: React.FC<DashboardProps> = ({ players, periods, activePeriod, o
           <select
             value={activePeriod?.id || ''}
             onChange={(e) => onPeriodChange(e.target.value)}
-            className="w-full bg-white border border-gray-100 rounded-2xl p-4 text-xs font-black text-emerald-700 outline-none appearance-none shadow-sm cursor-pointer"
+            className="w-full bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-4 text-xs font-black text-emerald-900 outline-none appearance-none shadow-sm cursor-pointer"
           >
             {Array.isArray(periods) && periods.map((p) => (
               <option key={p.id} value={p.id}>
@@ -58,7 +58,7 @@ const Dashboard: React.FC<DashboardProps> = ({ players, periods, activePeriod, o
       </div>
 
       {/* Active Period Summary Card */}
-      <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+      <div className="bg-white/20 backdrop-blur-md rounded-3xl p-6 shadow-sm border border-gray-100/50">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-lg font-black text-gray-800 flex items-center gap-2">
             <span className="w-2 h-6 bg-emerald-500 rounded-full"></span>
@@ -70,21 +70,21 @@ const Dashboard: React.FC<DashboardProps> = ({ players, periods, activePeriod, o
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
-            <p className="text-[10px] text-emerald-600 font-bold mb-1 uppercase tracking-widest">本期净余收入</p>
-            <p className="text-xl font-black text-emerald-700">¥{totalIncome.toFixed(2)}</p>
-            <p className="text-[8px] text-emerald-400 opacity-60">已扣除单场加支</p>
+          <div className="bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/30">
+            <p className="text-[10px] text-emerald-800 font-bold mb-1 uppercase tracking-widest">本期净余收入</p>
+            <p className="text-xl font-black text-emerald-900">¥{totalIncome.toFixed(2)}</p>
+            <p className="text-[8px] text-emerald-700 opacity-80">已扣除单场加支</p>
           </div>
-          <div className="bg-red-50 p-4 rounded-2xl border border-red-100">
-            <p className="text-[10px] text-red-600 font-bold mb-1 uppercase tracking-widest">本期基础成本</p>
-            <p className="text-xl font-black text-red-700">¥{totalExpenses.toFixed(2)}</p>
-            <p className="text-[8px] text-red-400 opacity-60">不含单场加支</p>
+          <div className="bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/30">
+            <p className="text-[10px] text-red-800 font-bold mb-1 uppercase tracking-widest">本期基础成本</p>
+            <p className="text-xl font-black text-red-900">¥{totalExpenses.toFixed(2)}</p>
+            <p className="text-[8px] text-red-700 opacity-80">不含单场加支</p>
           </div>
         </div>
 
         {activePeriod && (
           <div className="space-y-3">
-            <div className="p-5 bg-gray-900 text-white rounded-2xl shadow-xl relative overflow-hidden">
+            <div className="p-5 bg-black/20 backdrop-blur-md text-white border border-white/10 rounded-2xl shadow-xl relative overflow-hidden">
                <div className="absolute top-0 right-0 p-4 opacity-10 text-4xl">👑</div>
                <p className="text-[10px] font-black text-gray-400 mb-2 uppercase tracking-widest">集资人财务结算 (每人)</p>
                
@@ -111,15 +111,28 @@ const Dashboard: React.FC<DashboardProps> = ({ players, periods, activePeriod, o
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center">
-          <p className="text-3xl mb-2">👥</p>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">成员档案</p>
-          <p className="text-xl font-black text-gray-800">{players.length}</p>
+        <div className="bg-white/20 backdrop-blur-md p-5 rounded-3xl shadow-sm border border-white/30 flex flex-col items-center">
+          <div className="w-12 h-12 mb-2 flex items-center justify-center relative">
+            <img 
+              src="/badminton-player.png" 
+              alt="成员档案" 
+              className="w-full h-full object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.1)] transition-transform hover:scale-110" 
+              onError={(e) => { 
+                e.currentTarget.style.display = 'none'; 
+                if (e.currentTarget.nextElementSibling) {
+                  e.currentTarget.nextElementSibling.classList.remove('hidden');
+                }
+              }} 
+            />
+            <p className="text-3xl hidden absolute">👥</p>
+          </div>
+          <p className="text-[10px] font-black text-emerald-800/80 uppercase tracking-widest">成员档案</p>
+          <p className="text-xl font-black text-emerald-900">{players.length}</p>
         </div>
-        <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center">
+        <div className="bg-white/20 backdrop-blur-md p-5 rounded-3xl shadow-sm border border-white/30 flex flex-col items-center">
           <p className="text-3xl mb-2">📅</p>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">结算历史</p>
-          <p className="text-xl font-black text-gray-800">{periods.length}</p>
+          <p className="text-[10px] font-black text-emerald-800/80 uppercase tracking-widest">结算历史</p>
+          <p className="text-xl font-black text-emerald-900">{periods.length}</p>
         </div>
       </div>
     </div>

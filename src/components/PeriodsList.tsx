@@ -287,7 +287,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
 
     return (
       <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-fade-in bg-black/60 backdrop-blur-md">
-        <div className="w-full max-w-sm bg-white rounded-[2.5rem] p-8 shadow-2xl animate-fade-in">
+        <div className="w-full max-w-sm bg-white/30 backdrop-blur-[20px] rounded-[2.5rem] border border-white/50 p-8 shadow-2xl animate-fade-in">
           <div className="flex flex-col items-center text-center">
             <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -323,13 +323,13 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
   const renderPeriodDrawer = (title: string, onCancel: () => void) => (
     <div className="fixed inset-0 z-[100] flex items-end justify-center animate-fade-in bg-black/40 backdrop-blur-[2px]">
       <div 
-        className="w-full max-w-md bg-white rounded-t-[2.5rem] shadow-2xl p-6 pb-safe animate-slide-up overflow-y-auto max-h-[90vh]"
+        className="w-full max-w-md bg-white/30 backdrop-blur-[20px] border-t border-white/50 rounded-t-[2.5rem] shadow-2xl p-6 pb-safe animate-slide-up overflow-y-auto max-h-[90vh]"
         onClick={e => e.stopPropagation()}
       >
-        <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6"></div>
+        <div className="w-12 h-1.5 bg-white/50 rounded-full mx-auto mb-6"></div>
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-black text-gray-800">{title}</h3>
-          <button onClick={onCancel} className="text-gray-300 p-2 active:bg-gray-100 rounded-full">
+          <h3 className="text-xl font-black text-emerald-900">{title}</h3>
+          <button onClick={onCancel} className="text-emerald-900 border border-emerald-900/10 p-2 hover:bg-white/20 active:bg-white/30 rounded-full">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -352,7 +352,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
             <label className="block text-[10px] font-black text-red-800 uppercase tracking-widest mb-1 ml-1">本周期预付场地费</label>
             <div className="relative flex items-center">
               <span className="absolute left-4 text-red-300 font-bold italic">¥</span>
-              <input type="number" placeholder="0.00" value={periodFormData.courtCost || ''} onChange={e => setPeriodFormData({...periodFormData, courtCost: Number(e.target.value)})} className="w-full bg-transparent border-none p-0 pl-8 text-2xl font-black text-red-600 outline-none focus:ring-0" />
+              <input type="number" placeholder="0.00" value={periodFormData.courtCost === '' as any ? '' : periodFormData.courtCost} onChange={e => setPeriodFormData({...periodFormData, courtCost: e.target.value === '' ? '' as any : Number(e.target.value)})} className="w-full bg-transparent border-none p-0 pl-8 text-2xl font-black text-red-600 outline-none focus:ring-0" />
             </div>
           </div>
           <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
@@ -367,7 +367,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
                   <button key={f.id} type="button" onClick={() => {
                     const current = periodFormData.funderIds || [];
                     setPeriodFormData({...periodFormData, funderIds: current.includes(f.id) ? current.filter(id => id !== f.id) : [...current, f.id]});
-                  }} className={`text-[10px] py-2.5 rounded-xl border transition-all font-black ${isSelected ? 'bg-amber-500 border-amber-600 text-white shadow-md' : 'bg-white border-amber-100 text-amber-200'}`}>
+                  }} className={`text-[10px] py-2.5 rounded-xl border transition-all font-black ${isSelected ? 'bg-amber-400 border-amber-300 ring-1 ring-amber-200 text-white shadow-[0_0_15px_rgba(251,191,36,0.6)]' : 'bg-white border-amber-100 text-amber-200'}`}>
                     {f.name}
                   </button>
                 )
@@ -403,9 +403,9 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
                 };
 
                 return (
-                  <div key={p.id} className="bg-white p-3 rounded-xl border border-blue-50 flex flex-col gap-2">
+                  <div key={p.id} className="bg-white/30 backdrop-blur-md p-3 rounded-xl border border-white/40 flex flex-col gap-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-black text-gray-700">{p.name}</span>
+                      <span className="text-xs font-black text-emerald-900">{p.name}</span>
                       <div className="flex gap-1">
                         {[PlayerType.MONTHLY, PlayerType.HALF_MONTHLY, PlayerType.PER_SESSION].map(type => (
                           <button
@@ -422,8 +422,8 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
                       <span className="text-[9px] text-gray-400 font-bold">设定金额 (¥):</span>
                       <input 
                         type="number" 
-                        value={config.fee} 
-                        onChange={(e) => updateConfig({ fee: Number(e.target.value) })}
+                        value={config.fee === '' as any ? '' : config.fee} 
+                        onChange={(e) => updateConfig({ fee: e.target.value === '' ? '' as any : Number(e.target.value) })}
                         className="w-16 bg-blue-50/50 border border-blue-100 rounded-lg p-1 text-[10px] font-black text-blue-600 outline-none text-right"
                       />
                     </div>
@@ -433,7 +433,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
             </div>
           </div>
           <div className="flex gap-3 pt-2">
-            <button onClick={handleSavePeriod} className="flex-[2] bg-emerald-600 text-white py-4 rounded-2xl font-black text-base shadow-lg shadow-emerald-200 active:scale-95 transition-all">保存配置</button>
+            <button onClick={handleSavePeriod} className="flex-[2] bg-emerald-500 ring-1 ring-white/40 text-white py-4 rounded-2xl font-black text-base shadow-[0_0_20px_rgba(16,185,129,0.5)] active:scale-95 transition-all">保存配置</button>
             <button onClick={onCancel} className="flex-1 bg-gray-100 text-gray-500 py-4 rounded-2xl font-black text-sm active:bg-gray-200">取消</button>
           </div>
         </div>
@@ -445,9 +445,9 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
     const currentSubtotal = (selectedAttendees || []).reduce((sum, a) => sum + (a.fee || 0), 0);
 
     return (
-      <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 animate-fade-in bg-black/60 backdrop-blur-sm" onClick={() => { setActiveSessionPeriod(null); setEditingSessionId(null); }}>
-        <div className="w-full max-w-sm bg-white rounded-[2.5rem] p-6 shadow-2xl animate-fade-in max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-          <h3 className="text-lg font-black text-gray-800 mb-6">{editingSessionId ? '✏️ 编辑打球记录' : '✨ 录入打球记录'}</h3>
+      <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 animate-fade-in bg-black/60 backdrop-blur-[10px]" onClick={() => { setActiveSessionPeriod(null); setEditingSessionId(null); }}>
+        <div className="w-full max-w-sm bg-white/30 backdrop-blur-[20px] rounded-[2.5rem] border border-white/50 p-6 shadow-2xl animate-fade-in max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <h3 className="text-lg font-black text-emerald-900 mb-6">{editingSessionId ? '✏️ 编辑打球记录' : '✨ 录入打球记录'}</h3>
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-3">
                <div>
@@ -456,7 +456,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
                </div>
                <div>
                   <label className="block text-[10px] font-black text-gray-400 mb-1">额外费用(支)</label>
-                  <input type="number" value={sessionFormCost || ''} onChange={e => setSessionFormCost(Number(e.target.value))} className="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 text-sm font-bold outline-none text-red-500" placeholder="0.00" />
+                  <input type="number" value={sessionFormCost === '' as any ? '' : sessionFormCost} onChange={e => setSessionFormCost(e.target.value === '' ? '' as any : Number(e.target.value))} className="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 text-sm font-bold outline-none text-red-500" placeholder="0.00" />
                </div>
             </div>
             
@@ -478,7 +478,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
                   const isSelected = selectedAttendees.find(a => a.playerId === p.id);
                   const displayFee = calculatePotentialFee(p, periodId);
                   return (
-                    <button key={p.id} onClick={() => toggleAttendee(p, periodId)} className={`text-[10px] px-3 py-2 rounded-xl font-black transition-all border flex items-center gap-1.5 ${isSelected ? 'bg-emerald-600 border-emerald-700 text-white shadow-md' : 'bg-white border-gray-100 text-gray-400'}`}>
+                    <button key={p.id} onClick={() => toggleAttendee(p, periodId)} className={`text-[10px] px-3 py-2 rounded-xl font-black transition-all border flex items-center gap-1.5 ${isSelected ? 'bg-emerald-500 border-emerald-400 ring-1 ring-emerald-300 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-white border-gray-100 text-gray-400'}`}>
                       <span>{p.name}</span>
                       <span className={`text-[8px] opacity-70 ${isSelected ? 'text-white' : 'text-gray-400'}`}>{displayFee === 0 ? '0' : `¥${displayFee}`}</span>
                     </button>
@@ -500,8 +500,8 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
                           <span className="text-[10px] text-gray-400 italic">实收 ¥</span>
                           <input 
                             type="number" 
-                            value={attendee.fee} 
-                            onChange={(e) => updateAttendeeFee(attendee.playerId, Number(e.target.value))}
+                            value={attendee.fee === '' as any ? '' : attendee.fee} 
+                            onChange={(e) => updateAttendeeFee(attendee.playerId, e.target.value === '' ? '' as any : Number(e.target.value))}
                             className="w-16 bg-white border border-gray-200 rounded-lg p-1.5 text-xs font-black text-emerald-600 outline-none focus:ring-1 focus:ring-emerald-400"
                           />
                         </div>
@@ -520,7 +520,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button onClick={() => saveSession(periodId)} className="flex-[2] bg-emerald-600 text-white py-4 rounded-2xl font-black text-sm active:scale-95 shadow-lg shadow-emerald-100">确认录入</button>
+              <button onClick={() => saveSession(periodId)} className="flex-[2] bg-emerald-500 ring-1 ring-white/40 text-white py-4 rounded-2xl font-black text-sm active:scale-95 shadow-[0_0_15px_rgba(16,185,129,0.5)]">确认录入</button>
               <button onClick={() => { setActiveSessionPeriod(null); setEditingSessionId(null); }} className="flex-1 bg-gray-100 text-gray-500 py-4 rounded-2xl font-black text-sm">取消</button>
             </div>
           </div>
@@ -537,10 +537,10 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Manage your sessions</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setSortBy(sortBy === 'date' ? 'name' : 'date')} className="text-[10px] font-black px-3 py-1.5 bg-white border border-gray-100 rounded-full shadow-sm text-gray-500 active:bg-gray-50">
+          <button onClick={() => setSortBy(sortBy === 'date' ? 'name' : 'date')} className="text-[10px] font-black px-3 py-1.5 bg-white/20 backdrop-blur-md border border-white/30 rounded-full shadow-sm text-emerald-900 active:bg-white/30">
             {sortBy === 'date' ? '📅 时间' : '🔤 名称'}
           </button>
-          <button onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')} className="text-[10px] font-black px-2 py-1.5 bg-white border border-gray-100 rounded-full shadow-sm text-gray-500 active:bg-gray-50">
+          <button onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')} className="text-[10px] font-black px-2 py-1.5 bg-white/20 backdrop-blur-md border border-white/30 rounded-full shadow-sm text-emerald-900 active:bg-white/30">
             {sortOrder === 'asc' ? '↑' : '↓'}
           </button>
         </div>
@@ -551,63 +551,63 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
           const isExpanded = expandedPeriodId === period.id;
           const totalIncome = (period.sessions || []).reduce((acc, s) => acc + (s.attendees || []).reduce((sum, a) => sum + (a.fee || 0), 0) - (s.sessionCost || 0), 0);
           return (
-            <div key={period.id} className={`bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden transition-all ${isExpanded ? 'ring-2 ring-emerald-500/10 shadow-lg' : ''}`}>
-              <div onClick={() => setExpandedPeriodId(isExpanded ? null : period.id)} className={`p-5 flex justify-between items-center cursor-pointer active:bg-gray-50 transition-colors ${isExpanded ? 'bg-emerald-50/20' : ''}`}>
+            <div key={period.id} className={`bg-white/20 backdrop-blur-md rounded-[2.5rem] shadow-sm border border-white/30 overflow-hidden transition-all ${isExpanded ? 'ring-2 ring-emerald-500/10 shadow-lg' : ''}`}>
+              <div onClick={() => setExpandedPeriodId(isExpanded ? null : period.id)} className={`p-5 flex justify-between items-center cursor-pointer active:bg-white/30 transition-colors ${isExpanded ? 'bg-white/10' : ''}`}>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-black text-gray-800 text-base">{period.name}</h3>
+                    <h3 className="font-black text-emerald-900 text-base">{period.name}</h3>
                     {(!period.endDate) && (
                       <span className="text-[8px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full font-black animate-pulse">进行中</span>
                     )}
                   </div>
-                  <p className="text-[10px] text-gray-400 font-bold">{formatDateChinese(period.startDate)} ~ {period.endDate ? formatDateChinese(period.endDate) : '至今'}</p>
+                  <p className="text-[10px] text-emerald-800/80 font-bold">{formatDateChinese(period.startDate)} ~ {period.endDate ? formatDateChinese(period.endDate) : '至今'}</p>
                 </div>
                 <div className="flex items-center gap-3">
                    <button 
                      onClick={(e) => { e.stopPropagation(); exportPeriodLedger(period); }}
-                     className="px-3 py-2 flex items-center gap-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 active:scale-95 transition-all rounded-xl border border-emerald-100 shadow-sm"
+                     className="px-3 py-2 flex items-center gap-1.5 text-emerald-800 bg-white/30 hover:bg-white/40 active:scale-95 transition-all rounded-xl border border-white/40 shadow-sm"
                    >
                      <Icons.Download />
                      <span className="text-[9px] font-black uppercase tracking-widest">导出</span>
                    </button>
                    <div className="text-right">
-                      <p className="text-[9px] text-gray-400 font-black">场次</p>
-                      <p className="font-black text-emerald-600">{(period.sessions || []).length}</p>
+                      <p className="text-[9px] text-emerald-800/80 font-black">场次</p>
+                      <p className="font-black text-emerald-900">{(period.sessions || []).length}</p>
                    </div>
-                   <div className={`transition-transform duration-300 ml-2 ${isExpanded ? 'rotate-180 text-emerald-500' : 'text-gray-300'}`}>
+                   <div className={`transition-transform duration-300 ml-2 ${isExpanded ? 'rotate-180 text-emerald-900' : 'text-emerald-800/60'}`}>
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
                   </div>
                 </div>
               </div>
 
               {isExpanded && (
-                <div className="p-5 bg-gray-50/30 border-t border-gray-50 space-y-6 animate-fade-in">
+                <div className="p-5 bg-white/10 border-t border-white/20 space-y-6 animate-fade-in">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white p-4 rounded-2xl border border-gray-100">
-                      <p className="text-[9px] font-black text-gray-400 uppercase mb-1">本期净余 (收入-额外支-基础费)</p>
-                      <p className={`text-lg font-black ${totalIncome - period.courtCost >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                    <div className="bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/30">
+                      <p className="text-[9px] font-black text-emerald-800/80 uppercase mb-1">本期净余 (收入-额外支-基础费)</p>
+                      <p className={`text-lg font-black ${totalIncome - period.courtCost >= 0 ? 'text-emerald-900' : 'text-red-800'}`}>
                         ¥{(totalIncome - period.courtCost).toFixed(2)}
                       </p>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white p-4 rounded-2xl border border-gray-100">
-                      <p className="text-[9px] font-black text-gray-400 uppercase mb-1">本期内额外总支</p>
-                      <p className="text-lg font-black text-red-500">¥{(period.sessions || []).reduce((a,s) => a+(s.sessionCost||0), 0).toFixed(2)}</p>
+                    <div className="bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/30">
+                      <p className="text-[9px] font-black text-emerald-800/80 uppercase mb-1">本期内额外总支</p>
+                      <p className="text-lg font-black text-red-800">¥{(period.sessions || []).reduce((a,s) => a+(s.sessionCost||0), 0).toFixed(2)}</p>
                     </div>
-                    <div className="bg-white p-4 rounded-2xl border border-gray-100">
-                      <p className="text-[9px] font-black text-gray-400 uppercase mb-1">本期实收总额</p>
-                      <p className="text-lg font-black text-emerald-600">¥{totalIncome.toFixed(2)}</p>
+                    <div className="bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/30">
+                      <p className="text-[9px] font-black text-emerald-800/80 uppercase mb-1">本期实收总额</p>
+                      <p className="text-lg font-black text-emerald-900">¥{totalIncome.toFixed(2)}</p>
                     </div>
                   </div>
                   <div>
                     <div className="flex justify-between items-center mb-2 px-1">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">👑 本期集资名单</p>
-                      <button onClick={(e) => { e.stopPropagation(); setEditingPeriodId(period.id); setPeriodFormData({ ...period, playerConfigs: players.map(p => period.playerConfigs?.find(c => c.playerId === p.id) || { playerId: p.id, type: PlayerType.PER_SESSION, fee: 25 }) }); }} className="text-[9px] text-emerald-600 font-black px-2 py-1 bg-emerald-50 rounded-lg">修改配置</button>
+                      <p className="text-[10px] font-black text-emerald-800/80 uppercase tracking-widest">👑 本期集资名单</p>
+                      <button onClick={(e) => { e.stopPropagation(); setEditingPeriodId(period.id); setPeriodFormData({ ...period, playerConfigs: players.map(p => period.playerConfigs?.find(c => c.playerId === p.id) || { playerId: p.id, type: PlayerType.PER_SESSION, fee: 25 }) }); }} className="text-[9px] text-emerald-900 font-black px-2 py-1 bg-white/30 backdrop-blur-md rounded-lg">修改配置</button>
                     </div>
-                    <div className="flex flex-wrap gap-1.5 p-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                    <div className="flex flex-wrap gap-1.5 p-3 bg-white/20 backdrop-blur-md rounded-2xl border border-white/30 shadow-sm">
                       {Array.isArray(period.funderIds) && period.funderIds.map(fid => (
-                        <span key={fid} className="text-[10px] bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full font-black border border-amber-100">
+                        <span key={fid} className="text-[10px] bg-amber-500/20 text-amber-900 px-2.5 py-1 rounded-full font-black border border-amber-500/30">
                           {players.find(pl => pl.id === fid)?.name || '未知'}
                         </span>
                       ))}
@@ -625,32 +625,32 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
                           setSessionFormCost(0); 
                           setSelectedAttendees([]); 
                         }} 
-                        className="text-[10px] bg-emerald-600 text-white px-4 py-2 rounded-xl font-black active:scale-95 shadow-lg shadow-emerald-100"
+                        className="text-[10px] bg-emerald-500 ring-1 ring-white/40 text-white px-4 py-2 rounded-xl font-black active:scale-95 shadow-[0_0_15px_rgba(16,185,129,0.5)]"
                       >
                         录入记录
                       </button>
                     </div>
                     <div className="space-y-3">
                       {Array.isArray(period.sessions) && period.sessions.map(session => (
-                        <div key={session.id} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                        <div key={session.id} className="bg-white/20 backdrop-blur-md p-4 rounded-2xl border border-white/30 shadow-sm">
                           <div className="flex justify-between items-center mb-2">
                              <div className="flex flex-col">
-                                <span className="text-xs font-black text-gray-800">{formatDateChinese(session.date)}</span>
+                                <span className="text-xs font-black text-emerald-900">{formatDateChinese(session.date)}</span>
                                 <div className="flex items-center gap-2 mt-1">
-                                  <span className="text-[9px] text-gray-500 font-bold">实收: ¥{(session.attendees || []).reduce((sum, a) => sum + (a.fee || 0), 0)}</span>
-                                  <span className="text-[9px] text-red-500 font-bold">支出: {session.sessionCost ? `-¥${session.sessionCost}` : '0'}</span>
-                                  <span className="text-[9px] text-emerald-600 font-black">当次入: ¥{((session.attendees || []).reduce((sum, a) => sum + (a.fee || 0), 0) - (session.sessionCost || 0)).toFixed(2)}</span>
+                                  <span className="text-[9px] text-emerald-800/80 font-bold">实收: ¥{(session.attendees || []).reduce((sum, a) => sum + (a.fee || 0), 0)}</span>
+                                  <span className="text-[9px] text-red-800 font-bold">支出: {session.sessionCost ? `-¥${session.sessionCost}` : '0'}</span>
+                                  <span className="text-[9px] text-emerald-900 font-black">当次入: ¥{((session.attendees || []).reduce((sum, a) => sum + (a.fee || 0), 0) - (session.sessionCost || 0)).toFixed(2)}</span>
                                 </div>
                              </div>
                              <div className="flex gap-1 items-center">
-                                <button onClick={(e) => { e.stopPropagation(); setActiveSessionPeriod(period.id); setEditingSessionId(session.id); setSessionFormDate(session.date); setSessionFormCost(session.sessionCost || 0); setSelectedAttendees(session.attendees || []); }} className="text-gray-300 p-1.5 active:text-emerald-500 transition-colors"><Icons.Pencil /></button>
+                                <button onClick={(e) => { e.stopPropagation(); setActiveSessionPeriod(period.id); setEditingSessionId(session.id); setSessionFormDate(session.date); setSessionFormCost(session.sessionCost || 0); setSelectedAttendees(session.attendees || []); }} className="text-emerald-800/80 p-1.5 active:text-emerald-900 transition-colors"><Icons.Pencil /></button>
                                 
                                 <button 
                                   onClick={(e) => handleRemoveSession(e, period.id, session.id)} 
                                   className={`transition-all duration-200 rounded-lg flex items-center justify-center p-1.5 ${
                                     sessionConfirmDeleteId === session.id 
                                       ? 'bg-red-500 text-white px-3' 
-                                      : 'text-gray-300 hover:text-red-500'
+                                      : 'text-emerald-800/80 hover:text-red-500'
                                   }`}
                                 >
                                   {sessionConfirmDeleteId === session.id ? (
@@ -663,8 +663,8 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
                           </div>
                           <div className="flex flex-wrap gap-1">
                             {Array.isArray(session.attendees) && session.attendees.map(a => (
-                              <span key={a.playerId} className="text-[9px] bg-gray-50 text-gray-500 px-2 py-0.5 rounded border border-gray-100">
-                                {players.find(pl => pl.id === a.playerId)?.name} {a.fee > 0 ? `(¥${a.fee})` : ''}
+                              <span key={a.playerId} className="text-[9px] bg-white/20 backdrop-blur-md text-emerald-900 px-2 py-0.5 rounded border border-white/30">
+                                {players.find(pl => pl.id === a.playerId)?.name} {(!a.fee || Number(a.fee) === 0) ? '(0)' : `(¥${a.fee})`}
                               </span>
                             ))}
                           </div>
@@ -687,7 +687,7 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
         })}
       </div>
 
-      <button onClick={() => { setIsAddingPeriod(true); setEditingPeriodId(null); setPeriodFormData(initialPeriodData); }} className="fixed bottom-24 right-6 w-14 h-14 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-2xl shadow-emerald-400 z-50 active:scale-90 transition-transform">
+      <button onClick={() => { setIsAddingPeriod(true); setEditingPeriodId(null); setPeriodFormData(initialPeriodData); }} className="fixed bottom-24 right-6 w-14 h-14 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.6)] ring-2 ring-emerald-300 z-50 active:scale-90 transition-transform">
         <Icons.Plus />
       </button>
 
@@ -697,9 +697,9 @@ const PeriodsList: React.FC<PeriodsListProps> = ({ periods, setPeriods, players,
       {periodToDeleteId && renderDeleteModal()}
 
       {(!Array.isArray(periods) || periods.length === 0) && (
-        <div className="text-center py-24 text-gray-300">
-          <p className="text-5xl mb-4 opacity-10">🏸</p>
-          <p className="text-sm font-black uppercase tracking-widest">尚未创建结算周期</p>
+        <div className="text-center py-24 text-emerald-800/60 bg-white/20 backdrop-blur-md rounded-[2.5rem] border border-white/30 m-4">
+          <p className="text-5xl mb-4 opacity-30">🏸</p>
+          <p className="text-sm font-black uppercase tracking-widest text-emerald-900">尚未创建结算周期</p>
         </div>
       )}
     </div>

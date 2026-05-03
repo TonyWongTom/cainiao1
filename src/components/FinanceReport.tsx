@@ -62,19 +62,19 @@ const FinanceReport: React.FC<FinanceReportProps> = ({ periods, players, initial
   return (
     <div className="p-4 space-y-6 pb-20">
       <div className="flex justify-between items-center px-1">
-        <h2 className="text-xl font-black text-gray-800">财务统计报表</h2>
+        <h2 className="text-xl font-black text-emerald-900">财务统计报表</h2>
       </div>
 
       {(Array.isArray(periods) && periods.length > 0) && (
-        <div>
-          <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
+        <div className="bg-white/20 backdrop-blur-md rounded-2xl p-4 border border-white/30">
+          <label className="block text-[10px] font-black text-emerald-800/60 uppercase tracking-widest mb-1.5 ml-1">
             选择结算周期
           </label>
           <div className="relative">
             <select
               value={selectedPeriod?.id || ''}
               onChange={(e) => onPeriodChange(e.target.value)}
-              className="w-full bg-white border border-gray-100 rounded-2xl p-4 text-xs font-black text-emerald-700 outline-none appearance-none shadow-sm cursor-pointer"
+              className="w-full bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-4 text-xs font-black text-emerald-900 outline-none appearance-none shadow-sm cursor-pointer"
             >
               {Array.isArray(periods) && periods.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -96,9 +96,9 @@ const FinanceReport: React.FC<FinanceReportProps> = ({ periods, players, initial
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100">
-            <h3 className="text-xs font-black text-amber-800 mb-2 flex items-center gap-1 uppercase">💡 核心财务逻辑</h3>
-            <p className="text-[10px] text-amber-600 leading-relaxed font-medium">
+          <div className="bg-white/20 backdrop-blur-md rounded-2xl p-4 border border-white/30">
+            <h3 className="text-xs font-black text-amber-900 mb-2 flex items-center gap-1 uppercase">💡 核心财务逻辑</h3>
+            <p className="text-[10px] text-amber-800/80 leading-relaxed font-medium">
               1. <b>总投入</b> = 基础场地费 (不含单场额外支出，因其已从收入中扣除)。<br/>
               2. <b>单场记录收入</b> = 成员实付金额 - 当次额外支出。<br/>
               3. <b>周期总收入</b> = 周期内所有单场记录收入之和。<br/>
@@ -110,12 +110,12 @@ const FinanceReport: React.FC<FinanceReportProps> = ({ periods, players, initial
           {selectedPeriod && (() => {
             const stats = calculatePeriodStats(selectedPeriod);
             return (
-              <div key={selectedPeriod.id} className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="bg-gray-50 px-5 py-4 border-b border-gray-100 flex justify-between items-center">
-                  <span className="font-black text-gray-800 text-base">
-                    {selectedPeriod.name} <span className="text-gray-400 font-bold ml-1">({formatMonthDay(selectedPeriod.startDate)})</span>
+              <div key={selectedPeriod.id} className="bg-white/20 backdrop-blur-md rounded-3xl shadow-sm border border-white/30 overflow-hidden">
+                <div className="bg-white/10 backdrop-blur-md px-5 py-4 border-b border-white/20 flex justify-between items-center">
+                  <span className="font-black text-emerald-900 text-base">
+                    {selectedPeriod.name} <span className="text-emerald-800/60 font-bold ml-1">({formatMonthDay(selectedPeriod.startDate)})</span>
                   </span>
-                  <span className="text-[10px] bg-white border border-gray-200 text-gray-400 px-3 py-1 rounded-full font-bold">
+                  <span className="text-[10px] bg-white/20 border border-white/30 text-emerald-800 px-3 py-1 rounded-full font-bold">
                     集资: {stats.funderCount}人
                   </span>
                 </div>
@@ -135,7 +135,7 @@ const FinanceReport: React.FC<FinanceReportProps> = ({ periods, players, initial
                     </div>
                   </div>
 
-                  <div className="bg-gray-900 rounded-2xl p-5 text-white shadow-lg relative mb-6">
+                  <div className="bg-black/20 backdrop-blur-md border border-white/20 rounded-2xl p-5 text-white shadow-lg relative mb-6">
                     <div className="flex justify-between items-center mb-4">
                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">集资人个人账单 (每人)</p>
                     </div>
@@ -157,31 +157,31 @@ const FinanceReport: React.FC<FinanceReportProps> = ({ periods, players, initial
 
                   {/* Participant Detailed Breakdown */}
                   <div>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1 flex justify-between">
+                    <p className="text-[10px] font-black text-emerald-800/60 uppercase tracking-widest mb-3 px-1 flex justify-between">
                       <span>🏸 参与成员明细</span>
                       <span>{Object.keys(stats.playerBreakdown).length}人出勤</span>
                     </p>
-                    <div className="bg-gray-50 rounded-2xl overflow-hidden border border-gray-100">
-                      <div className="grid grid-cols-3 px-4 py-2 border-b border-gray-100 text-[8px] font-black text-gray-400 uppercase tracking-wider">
+                    <div className="bg-white/20 backdrop-blur-md rounded-2xl overflow-hidden border border-white/30">
+                      <div className="grid grid-cols-3 px-4 py-2 border-b border-white/20 text-[8px] font-black text-emerald-800/60 uppercase tracking-wider">
                         <span>姓名</span>
                         <span className="text-center">出勤次数</span>
                         <span className="text-right">总实付</span>
                       </div>
-                      <div className="divide-y divide-gray-100">
+                      <div className="divide-y divide-white/20">
                         {Object.entries(stats.playerBreakdown).map(([pid, data]) => {
                           const playerName = players.find(p => p.id === pid)?.name || '未知';
                           const isFunder = Array.isArray(selectedPeriod.funderIds) && selectedPeriod.funderIds.includes(pid);
                           return (
                             <div key={pid} className="grid grid-cols-3 px-4 py-3 items-center">
                               <div className="flex items-center gap-1.5 overflow-hidden">
-                                <span className="text-xs font-bold text-gray-700 truncate">{playerName}</span>
-                                {isFunder && <span className="text-[8px] bg-amber-100 text-amber-600 px-1 rounded font-black shrink-0">👑</span>}
+                                <span className="text-xs font-bold text-emerald-900 truncate">{playerName}</span>
+                                {isFunder && <span className="text-[8px] bg-amber-500/20 text-amber-800 px-1 rounded font-black shrink-0">👑</span>}
                               </div>
                               <div className="text-center">
-                                <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{data.count}次</span>
+                                <span className="text-xs font-black text-emerald-800 bg-white/20 px-2 py-0.5 rounded-full">{data.count}次</span>
                               </div>
                               <div className="text-right">
-                                <span className="text-xs font-black text-gray-800">¥{data.totalPaid.toFixed(2)}</span>
+                                <span className="text-xs font-black text-emerald-900">¥{data.totalPaid.toFixed(2)}</span>
                               </div>
                             </div>
                           );
@@ -191,10 +191,10 @@ const FinanceReport: React.FC<FinanceReportProps> = ({ periods, players, initial
                   </div>
 
                   <div className="mt-6">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">当期集资背景</p>
+                    <p className="text-[10px] font-black text-emerald-800/60 uppercase tracking-widest mb-3">当期集资背景</p>
                     <div className="flex flex-wrap gap-1.5">
                       {Array.isArray(selectedPeriod.funderIds) && selectedPeriod.funderIds.map(fid => (
-                        <span key={fid} className="text-[10px] bg-gray-50 text-gray-600 border border-gray-100 px-2 py-1 rounded-md font-bold">
+                        <span key={fid} className="text-[10px] bg-white/20 backdrop-blur-md text-emerald-900 border border-white/30 px-2 py-1 rounded-md font-bold">
                           {players.find(p => p.id === fid)?.name || '未知'}
                         </span>
                       ))}
