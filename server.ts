@@ -19,7 +19,17 @@ async function startServer() {
   const app = express();
   
   // --- 1. MIDDLEWARE (ABSOLUTE TOP PRIORITY) ---
-  app.use(cors());
+  app.use(cors({
+    origin: function(origin, callback) {
+      if (!origin || origin.includes('web.app') || origin.includes('run.app') || origin.includes('firebaseapp.com') || origin.includes('localhost')) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Password']
+  }));
   app.use(express.json());
 
   // --- 2. FIREBASE & FIRESTORE INITIALIZATION ---
