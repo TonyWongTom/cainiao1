@@ -402,7 +402,7 @@ const PeriodsList: React.FC<PeriodsListProps> = () => {
                 };
 
                 return (
-                  <div key={p.id} className="bg-white/30 backdrop-blur-md p-3 rounded-xl border border-white/40 flex flex-col gap-2">
+                  <div key={p.id} className="bg-white p-3 rounded-xl border border-blue-100/50 flex flex-col gap-2 shadow-sm transform-gpu">
                     <div className="flex justify-between items-center">
                       <span className="text-xs font-black text-emerald-900">{p.name}</span>
                       <div className="flex gap-1">
