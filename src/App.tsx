@@ -124,7 +124,7 @@ const MainApp: React.FC = () => {
                 <button
                   key={tab.id}
                   onClick={() => setView(tab.id)}
-                  className={`relative flex flex-col items-center justify-center flex-1 transition-all duration-300 py-2 group`}
+                  className={`relative flex flex-col items-center justify-center flex-1 transition-all duration-300 py-2 group z-0`}
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   {/* Active Background Bubble */}
