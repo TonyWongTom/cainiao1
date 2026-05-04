@@ -34,13 +34,24 @@ const PlayersList: React.FC<PlayersListProps> = () => {
 
   const handleSave = () => {
     if (!formData.name) return;
+    
+    // Check for duplicates
+    const isDuplicate = players.some(p => 
+      p.name.trim() === formData.name?.trim() && p.id !== editingId
+    );
+    
+    if (isDuplicate) {
+      alert(`已存在姓名为 "${formData.name.trim()}" 的成员，不能重复添加，将保留原记录。`);
+      return;
+    }
+
     if (editingId) {
-      setPlayers(prev => prev.map(p => p.id === editingId ? { ...p, ...formData } as Player : p));
+      setPlayers(prev => prev.map(p => p.id === editingId ? { ...p, ...formData, name: formData.name!.trim() } as Player : p));
       setEditingId(null);
     } else {
       const newPlayer: Player = {
         id: Date.now().toString(),
-        name: formData.name!,
+        name: formData.name.trim(),
         type: formData.type as PlayerType || PlayerType.PER_SESSION,
         defaultFee: formData.defaultFee !== undefined ? formData.defaultFee : (formData.type === PlayerType.PER_SESSION ? DEFAULT_SESSION_FEE : 0),
         isFunder: !!formData.isFunder
@@ -118,6 +129,16 @@ const PlayersList: React.FC<PlayersListProps> = () => {
         const [name, typeStr, feeStr, isFunderStr] = parts;
         
         if (!name) continue;
+
+        // 检查数据库中是否已存在该姓名
+        if (players.some(p => p.name === name)) {
+          continue; // 保留数据库中的，跳过此条
+        }
+        
+        // 检查当前导入列表中是否已存在该姓名
+        if (newPlayers.some(p => p.name === name)) {
+          continue; // 遇到 CSV 中重复的人，只保留第一条
+        }
         
         let type = PlayerType.PER_SESSION;
         if (typeStr?.includes('包月')) type = PlayerType.MONTHLY;
@@ -135,11 +156,11 @@ const PlayersList: React.FC<PlayersListProps> = () => {
       }
       
       if (newPlayers.length > 0) {
-        if (confirm(`识别到 ${newPlayers.length} 个新成员，是否确认导入？\n提示：建议先导出当前名单备份。`)) {
+        if (confirm(`识别到 ${newPlayers.length} 个不重复的新成员，是否确认导入？\n（已自动过滤与现有成员重复的姓名）\n提示：建议先导出当前名单备份。`)) {
           setPlayers(prev => [...prev, ...newPlayers]);
         }
       } else {
-        alert('未能识别到有效的成员数据，请检查文件格式。');
+        alert('未能识别到新的成员数据，可能所有名单中的人员在系统中已存在，或数据格式有误。');
       }
       if (fileInputRef.current) fileInputRef.current.value = '';
     };
