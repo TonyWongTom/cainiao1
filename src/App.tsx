@@ -13,7 +13,7 @@ import { AppProvider, useAppContext } from './context/AppContext';
 const MainApp: React.FC = () => {
   const [view, setView] = useState<View>('dashboard');
   
-  const { players, periods, isLoading, error, notification } = useAppContext();
+  const { players, periods, isLoading, error, notification, refreshData } = useAppContext();
 
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(null);
 
@@ -102,9 +102,11 @@ const MainApp: React.FC = () => {
                 <span className="mr-2">🏸</span>
                 菜鸟基地小帮手
               </h1>
-              <div className="flex items-center gap-1.5 mt-0.5">
+              <div className="flex items-center gap-1.5 mt-0.5 cursor-pointer active:scale-95 transition-transform" onClick={() => refreshData()}>
                 <div className={`w-1.5 h-1.5 rounded-full ${isLoading ? 'bg-amber-400 animate-pulse' : 'bg-emerald-500'}`}></div>
-                <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-80 text-emerald-800">Syncing with Cloud</span>
+                <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-80 text-emerald-800">
+                  {isLoading ? 'Syncing...' : 'Synced (Click to Refresh)'}
+                </span>
               </div>
             </div>
           </header>
